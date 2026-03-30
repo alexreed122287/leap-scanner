@@ -408,34 +408,45 @@ function bestExp(exps,minDte){
   return pref[0]||valid[0]||null;
 }
 
-// ── PRECOMPUTED LEAP DATES (skip expirations API call) ──────────────────
-function getLeapDates(){
-  // LEAP options expire on 3rd Friday of January (and sometimes June)
-  const now=new Date();const dates=[];
-  for(let y=now.getFullYear();y<=now.getFullYear()+3;y++){
-    for(const m of [0,5]){ // January=0, June=5
-      const d=new Date(y,m,1);
-      let fri=0;
-      for(let day=1;day<=21;day++){
-        d.setDate(day);
-        if(d.getDay()===5){fri++;if(fri===3){dates.push(d.toISOString().slice(0,10));break;}}
-      }
-    }
-  }
-  const minFuture=new Date(now.getTime()+270*86400000); // at least ~9 months out
-  return dates.filter(d=>new Date(d)>=minFuture).sort();
-}
-const LEAP_DATES=getLeapDates();
-
-// Try chain directly with precomputed LEAP dates (no expirations call needed)
-async function fastChain(sym){
-  for(const exp of LEAP_DATES){
+// ── LEAP DATE DISCOVERY (1 API call to learn date, then reuse for all) ──
+let cachedLeapDate=null;
+async function discoverLeapDate(minDte){
+  if(cachedLeapDate)return cachedLeapDate;
+  // Fetch expirations from a liquid ticker to find the real LEAP date
+  for(const probe of ['AAPL','MSFT','SPY','NVDA','QQQ']){
     try{
-      const raw=await trad('markets/options/chains',{symbol:sym,expiration:exp,greeks:'true'});
-      const opts=raw?.options?.option||(Array.isArray(raw)?raw:[]);
-      if(opts.length>0)return{opts,exp};
+      const raw=await trad('markets/options/expirations',{symbol:probe,includeAllRoots:'true'});
+      const exps=raw?.expirations?.date||(Array.isArray(raw)?raw:[]);
+      const found=bestExp(exps,minDte);
+      if(found){cachedLeapDate=found;return found;}
     }catch(e){}
   }
+  return null;
+}
+
+// Rate-limited fetch with retry on 429
+const _reqQueue=[];let _inflight=0;const MAX_INFLIGHT=10;
+function throttledTrad(ep,params){
+  return new Promise((resolve,reject)=>{
+    _reqQueue.push(()=>trad(ep,params).then(resolve).catch(reject));
+    _drainQueue();
+  });
+}
+function _drainQueue(){
+  while(_inflight<MAX_INFLIGHT&&_reqQueue.length){
+    _inflight++;
+    const fn=_reqQueue.shift();
+    fn().finally(()=>{_inflight--;_drainQueue();});
+  }
+}
+
+// Single chain fetch with known LEAP date
+async function fastChain(sym,leapDate){
+  try{
+    const raw=await throttledTrad('markets/options/chains',{symbol:sym,expiration:leapDate,greeks:'true'});
+    const opts=raw?.options?.option||(Array.isArray(raw)?raw:[]);
+    if(opts.length>0)return{opts,exp:leapDate};
+  }catch(e){}
   return null;
 }
 
@@ -568,9 +579,15 @@ async function runTopScan(){
   if(aborted)return finishTop(t0);
 
   const quotedTickers=Object.keys(qMap);
-  setStatus('TOP 10 — scanning '+quotedTickers.length+' chains ('+TOP_CONC+'x parallel)...','running');
 
-  // ── PHASE 2: Scan ALL chains at 25x concurrency ──────────────────
+  // Discover LEAP date once (1 API call), reuse for all tickers
+  setStatus('TOP 10 — discovering LEAP expiration date...','running');
+  cachedLeapDate=null; // reset cache
+  const leapDate=await discoverLeapDate(365);
+  if(!leapDate){setStatus('No LEAP expirations found','err');finishTop(t0);return;}
+  setStatus('TOP 10 — LEAP date: '+leapDate+' · scanning '+quotedTickers.length+' chains...','running');
+
+  // ── PHASE 2: Scan ALL chains (1 call per ticker, throttled) ──────
   let completed=0;
   const total=quotedTickers.length;
   const scanStart=Date.now();
@@ -580,7 +597,7 @@ async function runTopScan(){
   await pool(quotedTickers.map(t=>({sym:t,q:qMap[t]})),async(item)=>{
     if(aborted)return;
     try{
-      const result=await fastChain(item.sym);
+      const result=await fastChain(item.sym,leapDate);
       if(!result){completed++;return;}
       const{opts,exp}=result;
 
@@ -724,6 +741,11 @@ async function runScan(){
   }
 
   // ── PASS 2: CONCURRENT CHAIN SCAN ─────────────────────────────────────
+  // Discover LEAP date once, reuse for all
+  cachedLeapDate=null;
+  const leapDate=await discoverLeapDate(p.dte);
+  if(!leapDate){setStatus('No LEAP expirations found for '+p.dte+'+ DTE','err');finish(t0,p);return;}
+  setStatus('PASS 2 — LEAP date: '+leapDate+' · scanning '+scored1.length+' chains...','running');
   let completed=0;
   const total=scored1.length;
   const scanStart=Date.now();
@@ -731,8 +753,7 @@ async function runScan(){
   await pool(scored1,async(item)=>{
     if(aborted)return;
     try{
-      // Use fastChain to skip expirations API call
-      const result=await fastChain(item.sym);
+      const result=await fastChain(item.sym,leapDate);
       if(!result){completed++;return;}
       const{opts}=result;
 
