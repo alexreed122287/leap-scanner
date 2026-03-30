@@ -37,6 +37,10 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .scan-btn:disabled{border-color:var(--b2);color:var(--t3);cursor:not-allowed;background:transparent}
 .stop-btn{padding:10px 24px;border:1px solid var(--re);background:transparent;color:var(--re);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:background .12s}
 .stop-btn:hover{background:rgba(255,23,68,.08)}
+.settings-btn{padding:10px 16px;border:1px solid var(--b2);background:transparent;color:var(--t2);font-family:var(--mono);font-size:10px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .12s}
+.settings-btn:hover{border-color:var(--ac);color:var(--ac)}
+.settings-btn.default:hover{border-color:var(--am);color:var(--am)}
+.settings-btn.flash{border-color:var(--ac);color:var(--ac)}
 
 .prog-wrap{margin-bottom:6px}
 .prog-bar{height:2px;background:var(--b1);overflow:hidden}
@@ -173,6 +177,7 @@ td{padding:5px 8px;white-space:nowrap}
     <div class="fc"><label>Min OI<small>500+ institutional</small></label><input type="number" id="f-oi" value="300" min="50" max="5000" step="50"/></div>
     <div class="fc"><label>Max spread %<small>2% = tight</small></label><input type="number" id="f-sp" value="3" min="0.5" max="15" step="0.5"/></div>
     <div class="fc"><label>Concurrency<small>parallel chains</small></label><input type="number" id="f-conc" value="8" min="1" max="20" step="1"/></div>
+    <div class="fc"><label>Bypass Pass 1<small>scan all chains</small></label><select id="f-bypass"><option value="0" selected>OFF</option><option value="1">ON</option></select></div>
     <div class="fc"><label>Show top N<small>output rows</small></label>
       <select id="f-show"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select>
     </div>
@@ -181,6 +186,8 @@ td{padding:5px 8px;white-space:nowrap}
   <div class="btn-row">
     <button class="scan-btn" id="scan-btn" onclick="runScan()">&#9654; SCAN ALL</button>
     <button class="stop-btn" id="stop-btn" onclick="stopScan()" style="display:none">&#9632; STOP</button>
+    <button class="settings-btn" onclick="saveSettings()">SAVE SETTINGS</button>
+    <button class="settings-btn default" onclick="resetSettings()">DEFAULTS</button>
   </div>
 </div>
 
@@ -245,13 +252,93 @@ const LISTS={
 'W4':'PG,KO,PEP,COST,WMT,PM,MO,MDLZ,CL,KHC,GIS,KR,ADM,TSN,MNST,STZ,CAT,GE,HON,UNP,UPS,RTX,BA,DE,LMT,MMM,GD,NOC,TDG,ITW,EMR,ETN,PH,ROK,CTAS,FAST,GWW,CSX,NSC,FDX,DAL,UAL,LUV,AAL,WM,RSG,XOM,CVX,COP,EOG,SLB',
 'W5':'MPC,PSX,VLO,OXY,DVN,HAL,BKR,KMI,WMB,OKE,LNG,NEE,DUK,SO,SRE,AEP,EXC,XEL,ED,PLD,AMT,CCI,EQIX,PSA,DLR,O,WELL,SPG,VICI,AVB,EQR,LIN,APD,SHW,ECL,FCX,NEM,NUE,STLD,VMC,MLM,DOW,DD,PPG,ALB,DIS,CMCSA,NFLX,T,VZ,TMUS,CHTR',
 'W6':'EA,TTWO,WBD,PARA,MTCH,ROKU,LYV,BABA,NIO,XPEV,JD,PDD,BIDU,TSM,ASML,SONY,SAP,GME,AMC,TLRY,CGC,SPCE,OPEN,UPST,AI,IONQ,QUBT,RGTI,PATH,CFLT,GTLB,ESTC,BILL,PCOR,CELH,DUOL,CAVA,TOST,SOUN,JOBY,ACHR,LUNR,ASTS,RKLB,FSLR,RUN,PLUG,BE,NU,MELI,AXON',
-'W7':'CORZ,IREN,WULF,BTBT,CLSK,CIFR,MARA,RIOT,KTOS,AVAV,HWM,GEV,AMAT,LRCX,TER,UUUU,CCJ,DNN,COHR,AAOI,LITE,GLW,MRVL,UMAC,ONDS,RDW,RCAT,APP,RDDT,IBKR,KKR,APO,BX,ARES,EQT,AR,RRC,CNX,OKLO,NNE,SMR,IONQ,QUBT,RGTI,QBTS,CRWV,CRCL,NBIS,ALAB,CRDO'
+'W7':'CORZ,IREN,WULF,BTBT,CLSK,CIFR,MARA,RIOT,KTOS,AVAV,HWM,GEV,AMAT,LRCX,TER,UUUU,CCJ,DNN,COHR,AAOI,LITE,GLW,MRVL,UMAC,ONDS,RDW,RCAT,APP,RDDT,IBKR,KKR,APO,BX,ARES,EQT,AR,RRC,CNX,OKLO,NNE,SMR,IONQ,QUBT,RGTI,QBTS,CRWV,CRCL,NBIS,ALAB,CRDO',
+'SP1':'A,AAL,AAP,ABBV,ABC,ABMD,ABT,ACGL,ACN,ADBE,ADI,ADM,ADP,ADSK,AEE,AEP,AES,AFL,AIG,AIZ,AJG,AKAM,ALB,ALGN,ALK,ALL,ALLE,AMAT,AMCR,AMD,AME,AMGN,AMP,AMT,AMZN,ANET,ANSS,AON,AOS,APA,APD,APH,APTV,ARE,ATO,ATVI,AVB,AVGO,AVY,AWK,AXP,AZO',
+'SP2':'BA,BAC,BAX,BBWI,BBY,BDX,BEN,BF.B,BG,BIIB,BIO,BK,BKNG,BKR,BLK,BMY,BR,BRK.B,BRO,BSX,BWA,BXP,C,CAG,CAH,CARR,CAT,CB,CBOE,CBRE,CCI,CCL,CDAY,CDNS,CDW,CE,CEG,CF,CFG,CHD,CHRW,CHTR,CI,CINF,CL,CLX,CMA,CMCSA,CME,CMG,CMI',
+'SP3':'CMS,CNC,CNP,COF,COO,COP,COST,CPB,CPRT,CPT,CRL,CRM,CSCO,CSGP,CSX,CTAS,CTLT,CTRA,CTSH,CTVA,CVS,CVX,CZR,D,DAL,DD,DE,DFS,DG,DGX,DHI,DHR,DIS,DISH,DLTR,DOV,DOW,DPZ,DRI,DTE,DUK,DVA,DVN,DXC,DXCM,EA,EBAY,ECL,ED,EFX,EIX',
+'SP4':'EL,EMN,EMR,ENPH,EOG,EPAM,EQIX,EQR,EQT,ES,ESS,ETN,ETR,ETSY,EVRG,EW,EXC,EXPD,EXPE,EXR,F,FANG,FAST,FBHS,FCX,FDS,FDX,FE,FFIV,FIS,FISV,FITB,FLT,FMC,FOX,FOXA,FRC,FRT,FTNT,FTV,GD,GE,GILD,GIS,GL,GLW,GM,GNRC,GOOG,GOOGL,GPC',
+'SP5':'GPN,GRMN,GS,GWW,HAL,HAS,HBAN,HCA,HD,HOLX,HON,HPE,HPQ,HRL,HSIC,HST,HSY,HUM,HWM,IBM,ICE,IDXX,IEX,IFF,ILMN,INCY,INTC,INTU,INVH,IP,IPG,IQV,IR,IRM,ISRG,IT,ITW,IVZ,J,JBHT,JCI,JKHY,JNJ,JNPR,JPM,K,KDP,KEY,KEYS,KHC,KIM',
+'SP6':'KLAC,KMB,KMI,KMX,KO,KR,L,LDOS,LEN,LH,LHX,LIN,LKQ,LLY,LMT,LNC,LNT,LOW,LRCX,LULU,LUV,LVS,LW,LYB,LYV,MA,MAA,MAR,MAS,MCD,MCHP,MCK,MCO,MDLZ,MDT,MET,MGM,MHK,MKC,MKTX,MLM,MMC,MMM,MNST,MO,MOH,MOS,MPC,MPWR,MRK',
+'SP7':'MRNA,MRVL,MS,MSCI,MSFT,MSI,MTB,MTCH,MTD,MU,NCLH,NDAQ,NDSN,NEE,NEM,NFLX,NI,NKE,NOC,NOW,NRG,NSC,NTAP,NTRS,NUE,NVDA,NVR,NWL,NWS,NWSA,NXPI,O,ODFL,OGN,OKE,OMC,ON,ORCL,ORLY,OTIS,OXY,PARA,PAYC,PAYX,PCAR,PCG,PEAK,PEG,PEP,PFE',
+'SP8':'PFG,PG,PGR,PH,PHM,PKG,PKI,PLD,PM,PNC,PNR,PNW,POOL,PPG,PPL,PRU,PSA,PSX,PTC,PVH,PWR,PXD,PYPL,QCOM,QRVO,RCL,RE,REG,REGN,RF,RHI,RJF,RL,RMD,ROK,ROL,ROP,ROST,RPM,RSG,RTX,RVTY,SBAC,SBNY,SBUX,SCHW,SEE,SHW,SIVB,SJM',
+'SP9':'SLB,SNA,SNPS,SO,SPG,SPGI,SRE,STE,STT,STX,STZ,SWK,SWKS,SYF,SYK,SYY,T,TAP,TDG,TDY,TECH,TEL,TER,TFC,TFX,TGT,TJX,TMO,TMUS,TPR,TRGP,TRMB,TROW,TRV,TSCO,TSLA,TSN,TT,TTWO,TXN,TXT,TYL,UAL,UDR,UHS,ULTA,UNH,UNP,UPS,URI',
+'SP10':'USB,V,VFC,VICI,VLO,VMC,VRSK,VRSN,VRTX,VTR,VTRS,VZ,WAB,WAT,WBA,WBD,WDC,WEC,WELL,WFC,WHR,WM,WMB,WMT,WRB,WRK,WST,WTW,WY,WYNN,XEL,XOM,XRAY,XYL,YUM,ZBH,ZBRA,ZION,ZTS',
+'MID1':'ABNB,ACHR,ACIW,AGEN,AGTI,ALGT,AMKR,AMPH,APPF,APPN,APPS,ARCC,ARLO,ARRY,ASAN,AZEK,AZTA,BAND,BCPC,BLDR,BMRN,BOOT,BRZE,CALX,CARG,CASY,CHDN,CIEN,CIVI,CLVT,COKE,COOP,CROX,CRS,CRUS,CSWI,CUBE,CW,CYBR,DCGO,DECK,DINO,DOCS,DORM,DT,DVAX,DY,EEFT, ELFB,ENTG',
+'MID2':'ENSG,EPRT,EQH,ESAB,EVR,EWBC,EXAS,EXEL,EXLS,EYE,FAF,FHN,FIX,FIVE,FL,FLR,FND,FORM,FROG,FSS,FTDR,GATX,GBCI,GLOB,GMS,GNTX,GO,GSHD,GTLS,HAE,HALO,HEI,HESM,HGV,HLNE,HLI,HQY,HUBG,HUBB,HXL,HZO,IART,IBP,IDCC,IGT,IIVI,IPAR,ITCI,ITT,JAZZ',
+'MID3':'JBLU,JBL,KFRC,KNSL,KNTK,KNX,KRYS,LAMR,LANC,LAUR,LBRT,LFUS,LITE,LIVN,LNTH,LPLA,LSCC,LSTR,MANH,MASI,MATX,MBUU,MC,MEDP,MGNI,MIDD,MKSI,MOD,MPWR,MTDR,MUSA,NBIX,NEOG,NEU,NFE,NGVT,NJR,NOVT,NTNX,OLED,OLLI,ORA,OSK,OTTR,PAYC,PCTY,PEGA,PFGC,PI,PINC',
+'MID4':'PLNT,PLTK,PNFP,PNR,PODD,POST,POWL,PRI,PRFT,PSTG,PTC,QLYS,RARE,RBC,RDFN,RGEN,RMBS,RNR,ROKU,RVMD,RXRX,SAIL,SAIA,SATS,SBRA,SITE,SKX,SKYY,SMTC,SNDR,SNV,SOUN,SPSC,SSD,STEP,STRA,STRL,TBBK,TDC,TDOC,TENB,TKR,TNET,TOL,TREX,TRIP,TTEK,TWST,TXRH,UFI',
+'MID5':'UHAL,VRNS,VRRM,VSCO,VSTO,WAL,WERN,WEX,WING,WMS,WOLF,WRBY,WSC,WSM,WTS,WWD,X,XNCR,XPO,YEXT,YOU,ZBRA,ZEN,ZI,ZNTL,ZWS',
+'GRO1':'AEHR,AGIO,AIRS,ALRM,ALTR,AMPL,APLS,ARCT,ARHS,ARIS,ARVN,ASPN,ATKR,AVPT,AVTR,AXSM,AYI,BCOV,BDTX,BGNE,BILL,BLKB,BL,BMBL,BNR,BROS,BSY,BTDR,BWA,BWXT,BYD,BYND,CACC,CADE,CART,CCCS,CCRN,CDNA,CDRE,CENTA,CHNG,CHPT,CHRW,CLS,CLSK,CMBM,COIN,COLD,COMM,CORT',
+'GRO2':'CPRX,CRSP,CRK,CRSR,CRVL,CSTM,CSWI,CVNA,CW,CWST,CXM,CYTK,DAR,DASH,DBX,DDOG,DEN,DERM,DGII,DIOD,DLO,DM,DNA,DNLI,DNN,DOCN,DOMO,DOOO,DSGX,DSP,DUOL,DXPE,DYN,ELAN,ELET,ENFN,ENOV,ENVX,EOLS,EPAS,ESGR,ESTE,EVBG,EVER,EVEX,EVTC,EXAI,EXP,EXPI,FBIN',
+'GRO3':'FCNCA,FIVN,FLNC,FLYW,FOCS,FOLD,FOUR,FOXF,FRPT,FRSH,GATO,GCT,GERN,GFL,GH,GIII,GLBE,GLNG,GMED,GPOR,GRND,GRWG,GSAT,GTLB,HASI,HCKT,HEAR,HIMS,HNST,HRTX,HSAI,HUBS,HWKN,HY,IAC,ICFI,ICHR,IMVT,INBX,INFN,INST,INSW,INTA,INTR,IOSP,IRTC,ISEE,ITRI,JWN,KARO',
+'GRO4':'KLIC,KOS,KURA,KVYO,LAZR,LBRDK,LCII,LEVI,LFST,LGIH,LI,LLAP,LMND,LNSR,LOCO,LOVE,LPG,LPRO,LQDT,LSEA,LUNR,LVWR,MANU,MAPS,MAX,MBIN,MCRI,ME,MESA,MGRC,MGNX,MGPI,MGRC,MIRM,MITK,MLKN,MMSI,MNDY,MNKD,MNTV,MODV,MORF,MRTX,MTLS,MTSI,MVST,MXL,NABL,NATL,NAUT',
+'GRO5':'NCNO,NDSN,NEWR,NEXT,NGMS,NMRK,NOVT,NRIX,NSIT,NTRA,NUVB,NVAX,NVEI,NVMI,NVOS,NVST,OB,OFIX,OKTA,OLPX,ONON,ONTO,OPCH,OPK,OSCR,OSIS,OTLY,OVIC,PACK,PATK,PAX,PCVX,PDFS,PDSB,PGNY,PHIN,PLAY,PLUG,PLYA,PRAX,PRCH,PRGS,PRTA,PSFE,PTCT,PTGX,PUBM,QDEL,QFIN,RCKT',
+'GRO6':'RDVT,RELY,RERE,REVG,RGNX,RH,RIVN,RNG,RPAY,RPD,RPRX,RVLV,S,SAGE,SANM,SAVA,SCPL,SDGR,SE,SEDG,SEER,SEMR,SEZL,SHAK,SHLS,SHO,SHOP,SHOO,SI,SILK,SITM,SLG,SLVM,SMMT,SMPL,SNEX,SOFI,SOLO,SPHR,SPI,SPNS,SPNT,SPOT,SPWR,SQSP,SRRK,SSTK,STEM,STNE,STNG',
+'GRO7':'SWAV,SWCH,SWI,TASK,TBBK,TECH,TGNA,TH,THRM,THS,TIGR,TIL,TIXT,TMDX,TMHC,TNXP,TOST,TREE,TRMK,TRUP,TTCF,TXG,UDMY,UPWK,URBN,USFD,UTHR,VCEL,VCNX,VCTR,VECO,VERA,VERV,VFS,VIAV,VIRT,VITL,VNT,VOD,VRNA,VRNT,VSEC,XPEL,XRX,YETI,YELP,ZETA,ZG,ZLAB,ZM,ZUO',
+'EX1':'ACLS,ALGM,AMSC,ASPN,ATOM,ATML,AUPH,AVLR,BAND,BEAM,BGCP,BHC,BLDP,BLMN,BNGO,BNTX,BODY,BOX,BRLT,BTCM,CALM,CCEP,CDMO,CERE,CGEN,CHEF,CHGG,CHRS,CHWY,CLAR,CLBT,CLDR,CLNE,CLPT,CMPO,CNTG,CNXC,COHU,COOK,COUR,COWN,CPRI,CRCT,CRNC,CRTO,CSGS,CUTR,DADA,DAVE,DBRG',
+'EX2':'DCT,DENN,DFIN,DIBS,DMRC,DNMR,DOOR,DRVN,EAST,EDIT,EFSC,EGHT,ELBM,ELLO,EMBC,ENTA,ENVX,EQBK,ERAS,ESTA,ETNB,ETRN,EVGO,EWCZ,EXTR,FCFS,FGEN,FLGT,FLTX,FNCH,FNKO,FORG,FRME,FROG,FSLY,FULC,FVRR,GCMG,GDDY,GDRX,GENI,GGAL,GKOS,GLPG,GLYC,GOCO,GRPN,GTES,GTLS,GTYH',
+'EX3':'HAIN,HAYW,HCAT,HCP,HLAH,HMST,HOOD,HPP,HRB,HSII,HTGC,HTLF,HURN,HYLN,IBRX,ICAD,ICUI,IESC,IMAB,INFA,INGR,INMD,INO,INSP,IONR,IREN,IRWD,ITIC,JACK,JAMF,JANX,JBGS,JBSS,JMIA,JOBY,JOUT,JRVR,JSPR,JYNT,KALV,KALU,KBAL,KDNY,KELYA,KFRC,KGS,KIDS,KIND,KIRK,KNBE',
+'EX4':'KREF,KRNT,KRO,KRUS,KTOS,KYMR,LADR,LAND,LBPH,LESL,LFMD,LGND,LINC,LIND,LION,LITE,LIVN,LMAT,LMFA,LNSR,LOPE,LOVE,LPLA,LPSN,LQDA,LSPD,LTCH,LTRN,LVOX,MANA,MAXN,MDRX,MDXH,MERC,MGEE,MGNI,MGTX,MHLD,MLAB,MLCO,MLNK,MNRL,MNST,MNTK,MOMO,MPAA,MRCY,MREO,MRNS,MRTN',
+'EX5':'MTEX,MTLS,MTTR,MUR,MVBF,MWA,MXC,MXCT,NAAS,NARI,NBHC,NBTB,NCBS,NCMI,NDLS,NGNE,NKLA,NKSH,NMIH,NMRA,NOMD,NOTE,NOVA,NRIX,NRXP,NSSC,NSTG,NTLA,NUBI,NUVB,NVAX,NVEI,NVCR,NVEC,NVEE,NVOS,NWPX,OABI,OBNK,OCFT,OGEN,OINK,OKLO,OLMA,OMER,ONEW,OOMA,OPEN,OPFI,ORIC',
+'LEV1':'TQQQ,SOXL,UPRO,SPXL,TECL,FAS,LABU,TNA,UDOW,URTY,FNGU,BULZ,WEBL,NAIL,DPST,DFEN,DRN,MIDU,WANT,DUSL,RETL,HIBL,PILL,CURE,BNKU',
+'LEV2':'SQQQ,SOXS,SPXU,SPXS,TECS,FAZ,LABD,TZA,SDOW,SRTY,FNGD,BERZ,WEBS,DRV,DRIP,HIBS,ERX,ERY,NUGT,DUST,JNUG,JDST,GUSH,DRIP,KORU',
+'LEV3':'QLD,SSO,DDM,UWM,MVV,SAA,ROM,UYG,AGQ,UGL,UCO,BOIL,UBT,UST,ULE,EET,EFO,UPW,DIG,UGE,BIB,SVXY,UVXY,VXX,VIXY',
+'LEV4':'QQQ,SPY,IWM,DIA,XLK,XLF,XLE,XLI,XLV,XLY,XLP,XLU,XLB,XLRE,XLC,SMH,SOXX,IGV,ARKK,ARKW,ARKG,ARKF,ARKQ,KWEB,FXI,EEM,EWZ,GDX,GDXJ,SLV,GLD,USO,XBI,IBB,XOP,OIH,KRE,XHB,ITB,JETS,BLOK,BITQ,WGMI,IBIT,BITO',
+'LEV5':'SOXQ,PSQ,SH,DOG,RWM,MYY,SBB,REK,SRS,SKF,SDP,EUO,YCS,SJB,TBF,TBT,TMV,TTT,BITI,CONL,MSFU,AMZU,NVDU,TSLL,NVDL,GOOGU,AAPD,AAPB,NFLX2,MSTZ,TSLS,NVDS,SMHB,SMHD,FNGS,SARK,ARKX,MOON,UFO,ROKT,DAPP,METV,CLOU,WCLD,HACK,BUG,CIBR,SKYY,SNSR,BOTZ,ROBO,IRBO,DTEC,LIT,REMX,URNM,URA,COPX,PICK,SILJ,SIL,PPLT,PALL,CORN,WEAT,SOYB,NIB,JO,CPER,DBB,DBA,DBC,PDBC,GSG',
+'U1':'SOPA,TURB,VUZI,ARBE,AEHL,JTAI,SRFM,CAN,HCTI,POET,VVPR,NG,FWDI,ABAT,SGML,PRSO,AGH,TRIN,QSI,VELO,ARR,LTBR,ASTI,SIDU,PMT,SERV,IMSR,GXAI,DJT,EOSE,PBI,GLXY,BLND,SLDP,RITM,NUAI,BMNR,UWMC,KYIV,FRMI,AUR,RIG,QS,GT,SSRM,WEN,WU,PSKY,DVLT,ABR',
+'U2':'LWLG,INOD,VNET,OUST,GRRR,VFF,OWL,AREC,AMTM,WYFI,AXTI,SABR,GRAB,MBLY,OTF,BBAI,ASST,TMC,STWD,PDYN,TE,RYAM,CLF,WGRX,VG,EFC,PUMP,RKT,GEMI,USAR,NLY,VOYG,SM,BLSH,SBET,LAES,RZLV,NNDM,OII,NE,ATHM,COUR,APLD,ULCC,LASE,NAT,SES,ABTC,PTON,DNUT',
+'U3':'MNTS,SKYT,EVH,TPH,AS,RSI,HYMC,COMP,LUMN,QXO,BULL,FIGR,AGNC,ORBS,FIG,TSSI,FLY,PGY,CRML,GSIT,YYAI,KD,NTSK,AMPX,DFDV,CCHH,WOOF,CRNC,KLAR,CYN,FUBO,JDZG,IMPP,MOBX,FINV,BTCS,ALTO,CXAI,MVIS,RIME,SOC,ARAI,WTI,CETX,ISPC,STFS,GFAI,MUX,RYN,GPRO',
+'U4':'INDI,EVLV,METC,IEP,HTZ,LTH,NB,SATL,WAY,ETOR,SBLK,SG,PTEN,AM,XMTR,NXDR,KULR,RR,KITT,CHYM,NMAX,ZENA,CENN,SNDL,VERI,NPWR,PTRN,PURR,RUM,SLNH,STEX,PTLO,PLBY,KOPN,GAME,ODD,ALIT,BARK,DK,SIRI,ZD,XIFR,CALY,MAX,GAP,BLNK,CLMT,MQ,TRNR,APLE',
+'U5':'BKKT,CWAN,UTI,LC,GEO,JEF,MRAM,OPRA,VNO,TTI,STAG,BEPC,HST,GILT,SGHC,LEG,HCSG,XPRO,PRM,BGC,GTX,SBH,PRCH,BBBY,IVR,PAYO,HR,TDS,GOGO,SW,CBRL,CXW,HOMB,ALTS,SNCY,ACI,PAY,REAX,DC,NXXT,PPC,OMDA,IQ,REAL,ANY,KUST,GITS,ONMD,GDYN,EMPD',
+'U6':'EGY,SXC,GSM,CRI,HLX,ASTL,SDRL,AIMD,RC,WTTR,ESI,VSNT,LZ,DV,NNN,OSW,BXMT,FLG,GNW,BDN,NTST,DEI,EBC,BBT,HLIT,RAMP,CDZI,GNLN,SB,OI,AZI,CODI,TBLA,BTOC,HUYA,WLTH,PRTS,NESR,AMBP,SFIX,SUNE,INGM,BKU,DGNX,LDI,AMOD,INN,TDTH,ATXG,LINE',
+'U7':'FBRT,MAC,FCPT,BRSP,FFBC,CFFN,CTLP,CWK,UNIT,EHTH,XTIA,OEC,RBNE,MPT,SAFX,FFAI,TROX,VCIG,BORR,ORC,MCW,USEG,THRY,ACDC,FWRG,SLGB,RWT,ADT,SFL,LU,XTKG,JZXN,HNGE,GLDD,MAN,OIS,DDL,HIMX,SLMT,OLOX,REKR,BNRG,SKYQ,WORX,HPK,RXT,RITR,ASNS,PROP,ZNB',
+'U8':'FATN,CSTM,EVEX,KXIN,MNTN,AUUD,BIOX,AIIO,HRZN,YMM,INVZ,RLX,ACVA,NOG,AMH,TIC,CRGY,CMRC,BLZE,WHLR,NCI,ADV,BAER,TDUP,DHC,BZAI,NAVN,ADEA,SPT,NRDS,CANG,RBBN,CDLX,OLB,GTM,GPGI,CTRE,UCB,CISS,LTRX,SKT,HTFL,FFIN,DOC,CXT,BANC,PRGS,WT,BNZI',
+'U9':'NSA,SLQT,LFS,OPTX,AUID,CETY,CDTG,INV,KMT,SEGG,TEAD,TALO,CCC,UIS,LAZ,JELD,SMTK,SWVL,QNST,ATEN,NCT,WEAV,STGW,AIV,CNDT,GETY,GNL,AIRE,TRUG,DAN,CCO,SHO,CNH,CTRI,PENG,PWP,PRKS,CIM,VERX,VVV,LX,CURB,UBSI,NPT,KMPR,AVNT,DFNS,TUYA,AIOT,PFS',
+'U10':'OUT,CARS,THH,TRN,MNRO,BKYI,FA,LRHC,IHRT,GTN,MLEC,EXFY,XHLD,ECX,CRE,DTCK,EZRA,STAK,DCX,ARI,KW,OCG,RENX,XWEL,NVVE,VEEA,ORKT,CBZ,XPON,RYAN,BENF,ANL,RNST,FBGL,MSGY,DXST,MIMI,MTEK,JEM,CTOS,FUSE,FRGT,RPGL,LXEH,RES,YYGH,KLC,BANL,CDXS,IVDA',
+'U11':'BRSL,UE,TLIH,PK,GBTG,HCHL,TDIC,RMSG,KLTO,CNEY,HLMN,OPTU,DRH,VTEX,SWIM,NMFC,KRG,ECVT,PKST,RUBI,WKC,VRE,GVH,NWBI,MFA,DKI,NATL,JBI,BNL,PECO,ELME,EWCZ,BRLS,TDAY,PEB,ABTS,LNKS,OPLN,SMA,HTCR,AIOS,RLJ,ESRT,HCAI,CDP,STEL,HXHX,ANGI,AUB,FCF',
+'U12':'ORI,RXST,VRME,TRTX,AIXI,KRC,CUZ,HTLM,TFSL,MSAI,SKYX,MBC,HIW,TGHL,SVC,SLGN,FFWM,FIP,PASW,KREF,PDM,AGAE,CERT,DCH,INLF,NXPL,YMAT,MASK,SVV,VSME,WFF,ORGN,LHSW,SVRN,DLXY,GCL,CIIT,RETO,EJH,UAMY,EB,LIF,HOOZ,TWM,MSTX,CRWG,RKLZ,BAIG,TSYY,MRAL',
+'U13':'SMCL,CRCG,COYY,ADBG,SOUX,RGTX,AHMA,ONDG,NOWL,NVD,OKLL,NBIG,IONX,TSDD,ORCX,AHCO,ORCU,SMCX,UUUG,AMDL,SOFX,HTBK,QBTZ,MOVE,USGG,IONL,NBIL,SMCZ,HELE,SEMY,PLTG,MSFL,PTIR,ALKT,MVLL,NFXL,RKLX,AAPU,TSMG,PLTZ,BABX,DRS,MMYT,CG,POWI,CBSH,CGNX',
+'U14':'CNM,HUT,OGE,PLTU,SYM,TEM,JHG,LGN,TSMU,CONI,KGS,CENX,PSN,SMST,ASO,INTW,CAKE,TSMX,TEX,XYZ,CMC,FLEX,QSR,LNT,SOLS,WH,PLNT,FLS,HSIC,SGI,BAH,NYT,CRWV,ANF,SFM,AAON,WFRD,SHAK,CALM,GGLL,WIX,CWST,FORM,VLTO,TTMI,ACM,VAL,AU,TTC,KRMN',
+'U15':'SN,CRH,FLUT,NVT,WLK,VRTL,PCAR,NXT,TW,TSEM,MTN,PRIM,EAT,GWRE,SCCO,MRSH,MULL,MUU,SPYQ,QQQP,MQQQ,SPUU,GFS,FTAI,VRT,SNDK,GEMG,EOSU,BMNG,BULG,FIGG,MSTP,LCDL,BULX,SBTU,DUOG,SNAG,AFRU,GLGG,TTDU,CRMU,CCUP,BLSG,COIA,OSCG,MTYY,PYPG,OPEG,NNEX,CIFG',
+'U16':'COIG,COIO,MPG,HODU,GRAG,PANG,PONX,HOYY,MSOO,HUTG,LACG,XBTY,CONX,SPOG,AALG,ETRL,MAAY,RDWU,QXAS,KMLI,UECG,OOQB,ONDU,PATX,KPDD,VOYX,FUTG,COZX,SMYY,XPEG,KBAB,OOSB,IOYY,XYZG,QBY,OKTG,RGYY,NUG,IREG,AXPG,DNNG,AVXX,PALU,FLYT,PLUL,UVIX,BITU,LULG',
+'U17':'BOEG,BIDG,QCML,CVNX,FCXG,RKTL,NETG,ZETX,RDTL,SHPU,PLYY,ANEL,SOFA,RTYY,BABU,CMGG,BBYY,WLDU,UPSG,RCAX,DRNL,FGRU,CSEX,COPZ,ORLG,ETHT,FBYY,BITX,NVYY,ABNG,QCMU,BTCL,UBRL,COTG,YBTY,ALBG,SBU,DOGD,DKNX,LMBO,AMYY,YBST,NIOG,SATG,GLWG,TSLO,FDRX',
+'U18':'APHU,ENPX,BEGS,CRWL,ISBG,LMNX,PAAU,HDLB,NUGY,ISSB,NEMG,HOOX,KJD,NVDO,GOU,BTFL,SNOU,MDBX,CWVX,CEGX,LEUX,BU,RSBY,RSBT,VALG,OSCX,AVGG,KBDU,FBL,CHAU,UBOT,KLAG,ETHU,ASMU,AMDG,RSBA,SNPX,PDDL,BRKU,GMMA,SNDU,XPP,NVDB,GEVG,TSLI,RSSX,RSSY,IWML',
+'U19':'AMZZ,LTL,SKYU,RTXG,CPXR,UPW,AAPX,FRDU,AVGU,RAAA,MATE,BTGD,TSXU,AAPB,RSSB,COHX,RVNL,RSST,UYM,BOEU,LNOK,WDCX,LITX,CSCL,VSTL,AVL,MRVU,TARK,MTUL,UBR,MVPL,AIBU,QQXL,SNXX,HCMT,LAYS,UCYB,TERG,DLLL,QQQU,URSP,INDL,UCC,USML,QQUP,AMUU,PBRG,LMTL',
+'U20':'IWDL,TEXU,UXI,RAAR,EZJ,QULL,XOMX,URE,EFO,UPV,RAAY,FNGG,PXIU,AXUP,CELT,BKNU,DASX,BLSX,DKUP,BULU,ARMU,IBX,TMF,UMDD,TPOR,TYD,EURL,MEXX,TXNU,HLXX,YSPY,PYPU,ADBU,TQQY,AAOX,GEVX,UNX,WTIB,BEG'
 };
-const ALL_TICKERS=[...new Set(Object.values(LISTS).flatMap(v=>v.split(',')))];
+
+// Healthcare / biotech tickers to exclude
+const EXCLUDE=new Set(['ABBV','ABC','ABMD','ABT','A','ALGN','AMGN','BAX','BDX','BIO','BIIB','BMY','BSX','CAH','CI','CNC','COO','CRL','CTLT','CVS','DGX','DHR','DVA','DXCM','EW','GILD','HCA','HOLX','HRL','HSIC','HUM','IDXX','ILMN','INCY','IQV','ISRG','JNJ','LH','LLY','MCK','MDT','MRK','MRNA','MOH','MTD','PEAK','PFE','PKI','PODD','REGN','RMD','RVTY','STE','SYK','TFX','TMO','UHS','UNH','VRTX','VTR','VTRS','WAT','WBA','WST','ZBH','ZTS','AGIO','APLS','ARCT','ARVN','AXSM','BDTX','BGNE','BMRN','CPRX','CRSP','CYTK','DNLI','DVAX','EOLS','EXAS','EXEL','FOLD','GERN','GH','GMED','HALO','HRTX','HIMS','IMVT','INBX','IRTC','ITCI','JAZZ','KARO','KRYS','KURA','LNTH','MEDP','MGNX','MIRM','MMSI','MORF','MRTX','NBIX','NTRA','NUVB','NVAX','NVST','OSCR','PCVX','PGNY','PRTA','PTCT','PTGX','QDEL','RARE','RCKT','RGEN','RGNX','RVMD','RXRX','SAGE','SAVA','SMMT','TDOC','TMDX','TWST','UTHR','VCEL','XNCR','BEAM','BNTX','BHC','AUPH','CERE','CGEN','CHRS','CDNA','CDMO','DERM','DNA','EDIT','ENTA','FGEN','FULC','GLPG','GLYC','GDRX','HCAT','ICAD','ICUI','IMAB','INO','INSP','IRWD','JANX','KDNY','KYMR','LBPH','LGND','LMAT','MDRX','MDXH','MGTX','MLAB','MREO','MRNS','NARI','NGNE','NMRA','NTLA','NVCR','OABI','OGEN','OLMA','OMER','OPFI','ORIC','LABU','LABD','XBI','IBB','ARKG','CURE','PILL','BIB']);
+
+const ALL_TICKERS=[...new Set(Object.values(LISTS).flatMap(v=>v.split(',')))].filter(t=>!EXCLUDE.has(t));
 
 // ── STATE ────────────────────────────────────────────────────────────────
 let scanRunning=false, aborted=false, allResults=[], sortCol='score', sortDir=-1;
 let currentOrder=null, orderAborted=false, serverCfg=null;
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────
+const DEFAULTS={'f-minp':'5','f-maxp':'1000','f-high':'70','f-topn1':'60','f-dte':'365','f-dmin':'0.75','f-dmax':'0.87','f-extr':'15','f-iv':'0.80','f-oi':'300','f-sp':'3','f-conc':'8','f-bypass':'0','f-show':'50'};
+const FILTER_IDS=Object.keys(DEFAULTS);
+
+function getSettings(){const o={};FILTER_IDS.forEach(id=>{o[id]=document.getElementById(id).value;});return o;}
+function applySettings(o){FILTER_IDS.forEach(id=>{if(o[id]!==undefined)document.getElementById(id).value=o[id];});}
+function saveSettings(){
+  localStorage.setItem('leapscan_settings',JSON.stringify(getSettings()));
+  const btn=document.querySelector('.settings-btn');
+  btn.classList.add('flash');btn.textContent='SAVED';
+  setTimeout(()=>{btn.classList.remove('flash');btn.textContent='SAVE SETTINGS';},1200);
+}
+function resetSettings(){
+  applySettings(DEFAULTS);
+  localStorage.removeItem('leapscan_settings');
+  const btn=document.querySelector('.settings-btn.default');
+  btn.style.borderColor='var(--am)';btn.style.color='var(--am)';btn.textContent='RESTORED';
+  setTimeout(()=>{btn.style.borderColor='';btn.style.color='';btn.textContent='DEFAULTS';},1200);
+}
+function loadSavedSettings(){
+  const saved=localStorage.getItem('leapscan_settings');
+  if(saved){try{applySettings(JSON.parse(saved));}catch(e){}}
+}
 
 // ── INIT ─────────────────────────────────────────────────────────────────
 (function init(){
@@ -267,6 +354,7 @@ let currentOrder=null, orderAborted=false, serverCfg=null;
     badge.textContent='SANDBOX · READ ONLY';
     document.getElementById('api-section').style.display='flex';
   }
+  loadSavedSettings();
   document.getElementById('ticker-count').textContent=ALL_TICKERS.length+' tickers';
   document.getElementById('tickers-input').addEventListener('input',function(){
     const v=this.value.trim();
@@ -421,6 +509,7 @@ async function runScan(){
     sp:+$('f-sp').value,
     show:+$('f-show').value,
     conc:+$('f-conc').value||8,
+    bypass:$('f-bypass').value==='1',
   };
 
   $('scan-btn').style.display='none';
@@ -429,43 +518,61 @@ async function runScan(){
   const t0=Date.now();
 
   // ── PASS 1: BATCH QUOTES ──────────────────────────────────────────────
-  setStatus('PASS 1 — fetching quotes for '+tickers.length+' tickers...','running');
   const BATCH=500;
   const qMap={};
   const batches=[];
   for(let i=0;i<tickers.length;i+=BATCH)batches.push(tickers.slice(i,i+BATCH));
+  let scored1;
 
-  for(let bi=0;bi<batches.length;bi++){
-    if(aborted)break;
-    setStatus('PASS 1 — quotes batch '+(bi+1)+'/'+batches.length,'running');
-    showProgress(bi,batches.length,0,0);
-    try{
-      const raw=await trad('markets/quotes',{symbols:batches[bi].join(','),greeks:'false'});
-      const arr=raw?.quotes?.quote;
-      const list=Array.isArray(arr)?arr:arr?[arr]:[];
-      list.filter(q=>q?.symbol).forEach(q=>qMap[q.symbol]=q);
-    }catch(e){setStatus('PASS 1 error: '+e.message,'err');}
+  if(p.bypass){
+    // Bypass: still fetch quotes (need spot price for scoring) but skip all filtering
+    setStatus('PASS 1 BYPASSED — fetching quotes for '+tickers.length+' tickers...','running');
+    for(let bi=0;bi<batches.length;bi++){
+      if(aborted)break;
+      setStatus('Fetching quotes batch '+(bi+1)+'/'+batches.length+' (bypass mode)','running');
+      showProgress(bi,batches.length,0,0);
+      try{
+        const raw=await trad('markets/quotes',{symbols:batches[bi].join(','),greeks:'false'});
+        const arr=raw?.quotes?.quote;
+        const list=Array.isArray(arr)?arr:arr?[arr]:[];
+        list.filter(q=>q?.symbol).forEach(q=>qMap[q.symbol]=q);
+      }catch(e){setStatus('Quote error: '+e.message,'err');}
+    }
+    if(aborted)return finish(t0,p);
+    scored1=tickers.filter(t=>qMap[t]?.last).map(t=>({sym:t,q:qMap[t],p1:0}));
+    setStatus('BYPASS — '+scored1.length+' tickers straight to chain scan','running');
+  } else {
+    setStatus('PASS 1 — fetching quotes for '+tickers.length+' tickers...','running');
+    for(let bi=0;bi<batches.length;bi++){
+      if(aborted)break;
+      setStatus('PASS 1 — quotes batch '+(bi+1)+'/'+batches.length,'running');
+      showProgress(bi,batches.length,0,0);
+      try{
+        const raw=await trad('markets/quotes',{symbols:batches[bi].join(','),greeks:'false'});
+        const arr=raw?.quotes?.quote;
+        const list=Array.isArray(arr)?arr:arr?[arr]:[];
+        list.filter(q=>q?.symbol).forEach(q=>qMap[q.symbol]=q);
+      }catch(e){setStatus('PASS 1 error: '+e.message,'err');}
+    }
+    if(aborted)return finish(t0,p);
+
+    scored1=tickers
+      .filter(t=>{
+        const q=qMap[t];
+        if(!q?.last||!q?.week_52_high)return false;
+        if(q.last<p.minPrice||q.last>p.maxPrice)return false;
+        return true;
+      })
+      .map(t=>({sym:t,q:qMap[t],p1:pass1Score(qMap[t])}))
+      .filter(x=>{
+        const fh=x.q.week_52_high>0?((x.q.last-x.q.week_52_high)/x.q.week_52_high)*100:0;
+        return Math.abs(fh)<=p.maxFromHigh||fh>=0;
+      })
+      .sort((a,b)=>b.p1-a.p1)
+      .slice(0,p.topN1);
+
+    setStatus('PASS 1 done — '+Object.keys(qMap).length+' quoted, '+scored1.length+' to chain scan','running');
   }
-
-  if(aborted)return finish(t0,p);
-
-  // Filter by price + score
-  const scored1=tickers
-    .filter(t=>{
-      const q=qMap[t];
-      if(!q?.last||!q?.week_52_high)return false;
-      if(q.last<p.minPrice||q.last>p.maxPrice)return false;
-      return true;
-    })
-    .map(t=>({sym:t,q:qMap[t],p1:pass1Score(qMap[t])}))
-    .filter(x=>{
-      const fh=x.q.week_52_high>0?((x.q.last-x.q.week_52_high)/x.q.week_52_high)*100:0;
-      return Math.abs(fh)<=p.maxFromHigh||fh>=0;
-    })
-    .sort((a,b)=>b.p1-a.p1)
-    .slice(0,p.topN1);
-
-  setStatus('PASS 1 done — '+Object.keys(qMap).length+' quoted, '+scored1.length+' to chain scan','running');
 
   // ── PASS 2: CONCURRENT CHAIN SCAN ─────────────────────────────────────
   let completed=0;
@@ -520,7 +627,7 @@ function finish(t0,p){
   $('stop-btn').style.display='none';
   if(t0&&p){
     allResults.sort((a,b)=>b.score-a.score);
-    render(allResults.slice(0,p.show),p);
+    render(allResults.slice(0,Math.max(10,p.show)),p);
     const elapsed=((Date.now()-t0)/1000).toFixed(1);
     if(aborted) setStatus('STOPPED — '+allResults.length+' contracts found in '+elapsed+'s','err');
     else setStatus('DONE — '+allResults.length+' contracts · '+elapsed+'s','done');
