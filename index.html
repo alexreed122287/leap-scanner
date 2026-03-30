@@ -178,7 +178,7 @@ td{padding:5px 8px;white-space:nowrap}
     <div class="fc"><label>Max IV<small>0.65 buy zone</small></label><input type="number" id="f-iv" value="0.80" min="0.10" max="3.0" step="0.05"/></div>
     <div class="fc"><label>Min OI<small>500+ institutional</small></label><input type="number" id="f-oi" value="300" min="50" max="5000" step="50"/></div>
     <div class="fc"><label>Max spread %<small>2% = tight</small></label><input type="number" id="f-sp" value="3" min="0.5" max="15" step="0.5"/></div>
-    <div class="fc"><label>Concurrency<small>parallel chains</small></label><input type="number" id="f-conc" value="8" min="1" max="20" step="1"/></div>
+    <div class="fc"><label>Concurrency<small>parallel chains</small></label><input type="number" id="f-conc" value="20" min="1" max="50" step="1"/></div>
     <div class="fc"><label>Bypass Pass 1<small>scan all chains</small></label><select id="f-bypass"><option value="0" selected>OFF</option><option value="1">ON</option></select></div>
     <div class="fc"><label>Show top N<small>output rows</small></label>
       <select id="f-show"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select>
@@ -320,7 +320,7 @@ let scanRunning=false, aborted=false, allResults=[], sortCol='score', sortDir=-1
 let currentOrder=null, orderAborted=false, serverCfg=null;
 
 // ── SETTINGS ─────────────────────────────────────────────────────────────
-const DEFAULTS={'f-minp':'5','f-maxp':'1000','f-high':'70','f-topn1':'60','f-dte':'365','f-dmin':'0.75','f-dmax':'0.87','f-extr':'15','f-iv':'0.80','f-oi':'300','f-sp':'3','f-conc':'8','f-bypass':'0','f-show':'50'};
+const DEFAULTS={'f-minp':'5','f-maxp':'1000','f-high':'70','f-topn1':'60','f-dte':'365','f-dmin':'0.75','f-dmax':'0.87','f-extr':'15','f-iv':'0.80','f-oi':'300','f-sp':'3','f-conc':'20','f-bypass':'0','f-show':'50'};
 const FILTER_IDS=Object.keys(DEFAULTS);
 
 function getSettings(){const o={};FILTER_IDS.forEach(id=>{o[id]=document.getElementById(id).value;});return o;}
@@ -502,14 +502,14 @@ function scoreLeapOpen(o,spot,gex,qData){
   return{score:Math.min(100,Math.round(score)),d,iv,ep,sp,oi,strike,fromHigh,tags,dte};
 }
 
-// ── TOP 10 SCAN (ignores all settings) ──────────────────────────────────
+// ── TOP 10 SCAN (ignores all settings, scans ALL tickers) ───────────────
 let topResults=[];
 async function runTopScan(){
   if(scanRunning)return;
   scanRunning=true;aborted=false;topResults=[];
 
   const tickers=ALL_TICKERS.slice();
-  const conc=+$('f-conc').value||8;
+  const TOP_CONC=25; // aggressive concurrency for speed
 
   $('scan-btn').style.display='none';
   $('top10-btn').style.display='none';
@@ -517,39 +517,41 @@ async function runTopScan(){
   $('results').innerHTML='';
   const t0=Date.now();
 
-  // Fetch all quotes (no price filter)
+  // ── PHASE 1: Concurrent batch quotes (all at once) ────────────────
   const BATCH=500;const qMap={};
   const batches=[];
   for(let i=0;i<tickers.length;i+=BATCH)batches.push(tickers.slice(i,i+BATCH));
 
-  setStatus('TOP 10 — fetching quotes for '+tickers.length+' tickers (no filters)...','running');
-  for(let bi=0;bi<batches.length;bi++){
-    if(aborted)break;
-    setStatus('TOP 10 — quotes batch '+(bi+1)+'/'+batches.length,'running');
-    showProgress(bi,batches.length,0,0);
-    try{
-      const raw=await trad('markets/quotes',{symbols:batches[bi].join(','),greeks:'false'});
-      const arr=raw?.quotes?.quote;
-      const list=Array.isArray(arr)?arr:arr?[arr]:[];
-      list.filter(q=>q?.symbol&&q?.last).forEach(q=>qMap[q.symbol]=q);
-    }catch(e){setStatus('Quote error: '+e.message,'err');}
-  }
+  setStatus('TOP 10 — fetching quotes for '+tickers.length+' tickers...','running');
+  let quoteDone=0;
+  await Promise.all(batches.map(batch=>
+    trad('markets/quotes',{symbols:batch.join(','),greeks:'false'})
+      .then(raw=>{
+        const arr=raw?.quotes?.quote;
+        const list=Array.isArray(arr)?arr:arr?[arr]:[];
+        list.filter(q=>q?.symbol&&q?.last).forEach(q=>qMap[q.symbol]=q);
+        quoteDone++;
+        showProgress(quoteDone,batches.length,0,0);
+      }).catch(()=>{quoteDone++;})
+  ));
   if(aborted)return finishTop(t0);
 
   const quotedTickers=Object.keys(qMap);
-  setStatus('TOP 10 — scanning '+quotedTickers.length+' tickers for highest scores...','running');
+  setStatus('TOP 10 — scanning '+quotedTickers.length+' chains ('+TOP_CONC+'x parallel)...','running');
 
-  // Scan ALL chains — no pass 1 filtering at all
+  // ── PHASE 2: Scan ALL chains at 25x concurrency ──────────────────
   let completed=0;
   const total=quotedTickers.length;
   const scanStart=Date.now();
+  let bestScore=0;
 
+  // Pre-fetch expirations in bulk batches of 25, then immediately chain-scan
   await pool(quotedTickers.map(t=>({sym:t,q:qMap[t]})),async(item)=>{
     if(aborted)return;
     try{
+      // Fetch expiration + chain back-to-back per ticker (fastest per-ticker path)
       const expRaw=await trad('markets/options/expirations',{symbol:item.sym,includeAllRoots:'true'});
       const exps=expRaw?.expirations?.date||(Array.isArray(expRaw)?expRaw:[]);
-      // Find the longest-dated expiration (365+ DTE preferred)
       const exp=bestExp(exps,365);
       if(!exp){completed++;return;}
 
@@ -572,7 +574,8 @@ async function runTopScan(){
           putWall:gex.putWall,maxPain:gex.maxPain,p1:0,
           optSym:o.symbol
         });
-        // Keep only top 50 in memory to avoid bloat, trim periodically
+        if(s.score>bestScore)bestScore=s.score;
+        // Trim to top 50 periodically to save memory
         if(topResults.length>200){
           topResults.sort((a,b)=>b.score-a.score);
           topResults.length=50;
@@ -583,11 +586,10 @@ async function runTopScan(){
     completed++;
     const elapsed=(Date.now()-scanStart)/1000;
     const rate=completed/elapsed;
-    const remaining=total-completed;
-    const eta=rate>0?remaining/rate:0;
-    setStatus('TOP 10 — '+item.sym+' ('+completed+'/'+total+') · best: '+(topResults.length?topResults.reduce((a,b)=>a.score>b.score?a:b).score:0),'running');
+    const eta=rate>0?(total-completed)/rate:0;
+    setStatus('TOP 10 — '+item.sym+' ('+completed+'/'+total+') · best: '+bestScore+' · ETA '+fmtTime(eta),'running');
     showProgress(completed,total,topResults.length,eta);
-  },conc);
+  },TOP_CONC);
 
   finishTop(t0);
 }
@@ -660,37 +662,24 @@ async function runScan(){
   for(let i=0;i<tickers.length;i+=BATCH)batches.push(tickers.slice(i,i+BATCH));
   let scored1;
 
-  if(p.bypass){
-    // Bypass: still fetch quotes (need spot price for scoring) but skip all filtering
-    setStatus('PASS 1 BYPASSED — fetching quotes for '+tickers.length+' tickers...','running');
-    for(let bi=0;bi<batches.length;bi++){
-      if(aborted)break;
-      setStatus('Fetching quotes batch '+(bi+1)+'/'+batches.length+' (bypass mode)','running');
-      showProgress(bi,batches.length,0,0);
-      try{
-        const raw=await trad('markets/quotes',{symbols:batches[bi].join(','),greeks:'false'});
+  // Fetch all quote batches concurrently for speed
+  setStatus((p.bypass?'BYPASS':'PASS 1')+' — fetching quotes for '+tickers.length+' tickers...','running');
+  let qDone=0;
+  await Promise.all(batches.map(batch=>
+    trad('markets/quotes',{symbols:batch.join(','),greeks:'false'})
+      .then(raw=>{
         const arr=raw?.quotes?.quote;
         const list=Array.isArray(arr)?arr:arr?[arr]:[];
         list.filter(q=>q?.symbol).forEach(q=>qMap[q.symbol]=q);
-      }catch(e){setStatus('Quote error: '+e.message,'err');}
-    }
-    if(aborted)return finish(t0,p);
+        qDone++;showProgress(qDone,batches.length,0,0);
+      }).catch(()=>{qDone++;})
+  ));
+  if(aborted)return finish(t0,p);
+
+  if(p.bypass){
     scored1=tickers.filter(t=>qMap[t]?.last).map(t=>({sym:t,q:qMap[t],p1:0}));
     setStatus('BYPASS — '+scored1.length+' tickers straight to chain scan','running');
   } else {
-    setStatus('PASS 1 — fetching quotes for '+tickers.length+' tickers...','running');
-    for(let bi=0;bi<batches.length;bi++){
-      if(aborted)break;
-      setStatus('PASS 1 — quotes batch '+(bi+1)+'/'+batches.length,'running');
-      showProgress(bi,batches.length,0,0);
-      try{
-        const raw=await trad('markets/quotes',{symbols:batches[bi].join(','),greeks:'false'});
-        const arr=raw?.quotes?.quote;
-        const list=Array.isArray(arr)?arr:arr?[arr]:[];
-        list.filter(q=>q?.symbol).forEach(q=>qMap[q.symbol]=q);
-      }catch(e){setStatus('PASS 1 error: '+e.message,'err');}
-    }
-    if(aborted)return finish(t0,p);
 
     scored1=tickers
       .filter(t=>{
