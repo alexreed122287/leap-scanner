@@ -229,7 +229,7 @@ td{padding:5px 8px;white-space:nowrap}
 <script>
 // ── CONFIG ───────────────────────────────────────────────────────────────
 const IS_LOCAL = ['localhost','127.0.0.1'].includes(location.hostname);
-const SANDBOX_KEY = '5eebf62a6678b05dc5e5d5b58c15f9b8';
+const PROD_KEY = 'v3IedXxG27RPOg3QqBgOSN2EacHR';
 
 // ── TICKERS ──────────────────────────────────────────────────────────────
 const LISTS={
@@ -351,7 +351,7 @@ function loadSavedSettings(){
   } else {
     badge.className='local-badge';
     badge.style.borderColor='var(--am)';badge.style.color='var(--am)';
-    badge.textContent='SANDBOX · READ ONLY';
+    badge.textContent='LIVE · READ ONLY';
     document.getElementById('api-section').style.display='flex';
   }
   loadSavedSettings();
@@ -371,8 +371,8 @@ async function trad(ep,params={}){
     if(!r.ok) throw new Error('API '+r.status);
     return r.json();
   } else {
-    const key=document.getElementById('api-key')?.value||SANDBOX_KEY;
-    const r=await fetch('https://sandbox.tradier.com/v1/'+ep+'?'+qs,{
+    const key=document.getElementById('api-key')?.value||PROD_KEY;
+    const r=await fetch('https://api.tradier.com/v1/'+ep+'?'+qs,{
       headers:{'Authorization':'Bearer '+key,'Accept':'application/json'}
     });
     if(!r.ok) throw new Error('API '+r.status);
