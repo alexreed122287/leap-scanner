@@ -408,6 +408,37 @@ function bestExp(exps,minDte){
   return pref[0]||valid[0]||null;
 }
 
+// ── PRECOMPUTED LEAP DATES (skip expirations API call) ──────────────────
+function getLeapDates(){
+  // LEAP options expire on 3rd Friday of January (and sometimes June)
+  const now=new Date();const dates=[];
+  for(let y=now.getFullYear();y<=now.getFullYear()+3;y++){
+    for(const m of [0,5]){ // January=0, June=5
+      const d=new Date(y,m,1);
+      let fri=0;
+      for(let day=1;day<=21;day++){
+        d.setDate(day);
+        if(d.getDay()===5){fri++;if(fri===3){dates.push(d.toISOString().slice(0,10));break;}}
+      }
+    }
+  }
+  const minFuture=new Date(now.getTime()+270*86400000); // at least ~9 months out
+  return dates.filter(d=>new Date(d)>=minFuture).sort();
+}
+const LEAP_DATES=getLeapDates();
+
+// Try chain directly with precomputed LEAP dates (no expirations call needed)
+async function fastChain(sym){
+  for(const exp of LEAP_DATES){
+    try{
+      const raw=await trad('markets/options/chains',{symbol:sym,expiration:exp,greeks:'true'});
+      const opts=raw?.options?.option||(Array.isArray(raw)?raw:[]);
+      if(opts.length>0)return{opts,exp};
+    }catch(e){}
+  }
+  return null;
+}
+
 // ── CONCURRENT POOL ──────────────────────────────────────────────────────
 async function pool(items,fn,concurrency=8){
   let idx=0;
@@ -545,19 +576,13 @@ async function runTopScan(){
   const scanStart=Date.now();
   let bestScore=0;
 
-  // Pre-fetch expirations in bulk batches of 25, then immediately chain-scan
+  // Direct chain fetch — skip expirations call (cuts API calls in half)
   await pool(quotedTickers.map(t=>({sym:t,q:qMap[t]})),async(item)=>{
     if(aborted)return;
     try{
-      // Fetch expiration + chain back-to-back per ticker (fastest per-ticker path)
-      const expRaw=await trad('markets/options/expirations',{symbol:item.sym,includeAllRoots:'true'});
-      const exps=expRaw?.expirations?.date||(Array.isArray(expRaw)?expRaw:[]);
-      const exp=bestExp(exps,365);
-      if(!exp){completed++;return;}
-
-      const chainRaw=await trad('markets/options/chains',{symbol:item.sym,expiration:exp,greeks:'true'});
-      const opts=chainRaw?.options?.option||(Array.isArray(chainRaw)?chainRaw:[]);
-      if(!opts.length){completed++;return;}
+      const result=await fastChain(item.sym);
+      if(!result){completed++;return;}
+      const{opts,exp}=result;
 
       const spot=item.q.last;
       const gex=computeGEX(opts,spot);
@@ -575,7 +600,6 @@ async function runTopScan(){
           optSym:o.symbol
         });
         if(s.score>bestScore)bestScore=s.score;
-        // Trim to top 50 periodically to save memory
         if(topResults.length>200){
           topResults.sort((a,b)=>b.score-a.score);
           topResults.length=50;
@@ -707,14 +731,10 @@ async function runScan(){
   await pool(scored1,async(item)=>{
     if(aborted)return;
     try{
-      const expRaw=await trad('markets/options/expirations',{symbol:item.sym,includeAllRoots:'true'});
-      const exps=expRaw?.expirations?.date||(Array.isArray(expRaw)?expRaw:[]);
-      const exp=bestExp(exps,p.dte);
-      if(!exp){completed++;return;}
-
-      const chainRaw=await trad('markets/options/chains',{symbol:item.sym,expiration:exp,greeks:'true'});
-      const opts=chainRaw?.options?.option||(Array.isArray(chainRaw)?chainRaw:[]);
-      if(!opts.length){completed++;return;}
+      // Use fastChain to skip expirations API call
+      const result=await fastChain(item.sym);
+      if(!result){completed++;return;}
+      const{opts}=result;
 
       const spot=item.q.last;
       const gex=computeGEX(opts,spot);
