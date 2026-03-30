@@ -711,6 +711,28 @@ function render(rows,p){
       '<span class="le"><span class="led" style="background:var(--re)"></span>IV↑ high IV</span>'+
       '<span style="margin-left:auto;color:var(--t3)">click headers to sort</span>'+
     '</div>'+
+    '<div class="legend" style="flex-direction:column;gap:8px;font-size:10px;margin-top:4px">'+
+      '<div style="color:var(--ac);font-weight:700;font-size:11px;letter-spacing:1px">SCORING SYSTEM — MAX 100 pts</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:6px 20px;width:100%">'+
+        '<div style="color:var(--t2)"><span style="color:var(--ac)">GEX PROXIMITY</span> <span style="color:var(--t3)">up to 28 pts</span><br>'+
+          '<span style="color:var(--t3)">Strike near put wall: 28 − (distance × 1.3) · Near max pain: +3</span></div>'+
+        '<div style="color:var(--t2)"><span style="color:var(--ac)">IMPLIED VOL</span> <span style="color:var(--t3)">up to 20 pts</span><br>'+
+          '<span style="color:var(--t3)">≤30%: 20 · ≤40%: 17 · ≤50%: 13 · ≤60%: 8 · ≤70%: 4 · ≤80%: 1</span></div>'+
+        '<div style="color:var(--t2)"><span style="color:var(--ac)">52W HIGH DISCOUNT</span> <span style="color:var(--t3)">up to 18 pts</span><br>'+
+          '<span style="color:var(--t3)">≥40% off: 18 · ≥30%: 15 · ≥20%: 11 · ≥10%: 6 · ≥5%: 3</span></div>'+
+        '<div style="color:var(--t2)"><span style="color:var(--ac)">EXTRINSIC %</span> <span style="color:var(--t3)">up to 15 pts</span><br>'+
+          '<span style="color:var(--t3)">≤8%: 15 · ≤10%: 13 · ≤12%: 10 · ≤15%: 7 · ≤20%: 3</span></div>'+
+        '<div style="color:var(--t2)"><span style="color:var(--ac)">OPEN INTEREST</span> <span style="color:var(--t3)">up to 10 pts</span><br>'+
+          '<span style="color:var(--t3)">≥10K: 10 · ≥5K: 8 · ≥2K: 6 · ≥1K: 4 · ≥500: 2</span></div>'+
+        '<div style="color:var(--t2)"><span style="color:var(--ac)">SPREAD %</span> <span style="color:var(--t3)">up to 9 pts</span><br>'+
+          '<span style="color:var(--t3)">≤0.8%: 9 · ≤1.2%: 7 · ≤1.8%: 5 · ≤2.5%: 3 · ≤3.5%: 1</span></div>'+
+        '<div style="color:var(--t2)"><span style="color:var(--ac)">VOLUME SURGE</span> <span style="color:var(--t3)">up to 2 pts</span><br>'+
+          '<span style="color:var(--t3)">2x+ avg volume: +2</span></div>'+
+      '</div>'+
+      '<div style="color:var(--t3);border-top:1px solid var(--b1);padding-top:5px;font-size:9px">'+
+        '70+ = Strong Buy · 50-69 = Buy · 30-49 = Watchlist · &lt;30 = Weak — Higher score = better LEAP value based on GEX positioning, low IV, discount to highs, tight spreads, and institutional flow'+
+      '</div>'+
+    '</div>'+
     '<div class="tbl-wrap"><table><thead><tr>'+thead+'</tr></thead><tbody>'+tbody+'</tbody></table></div>';
 }
 
