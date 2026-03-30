@@ -37,6 +37,8 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 .scan-btn:disabled{border-color:var(--b2);color:var(--t3);cursor:not-allowed;background:transparent}
 .stop-btn{padding:10px 24px;border:1px solid var(--re);background:transparent;color:var(--re);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:background .12s}
 .stop-btn:hover{background:rgba(255,23,68,.08)}
+.top10-btn{flex:1;padding:10px;border:1px solid var(--am);background:transparent;color:var(--am);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:background .12s}
+.top10-btn:hover{background:rgba(255,171,0,.08)}
 .settings-btn{padding:10px 16px;border:1px solid var(--b2);background:transparent;color:var(--t2);font-family:var(--mono);font-size:10px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase;transition:all .12s}
 .settings-btn:hover{border-color:var(--ac);color:var(--ac)}
 .settings-btn.default:hover{border-color:var(--am);color:var(--am)}
@@ -185,6 +187,7 @@ td{padding:5px 8px;white-space:nowrap}
 
   <div class="btn-row">
     <button class="scan-btn" id="scan-btn" onclick="runScan()">&#9654; SCAN ALL</button>
+    <button class="top10-btn" id="top10-btn" onclick="runTopScan()">&#9733; FIND TOP 10</button>
     <button class="stop-btn" id="stop-btn" onclick="stopScan()" style="display:none">&#9632; STOP</button>
     <button class="settings-btn" onclick="saveSettings()">SAVE SETTINGS</button>
     <button class="settings-btn default" onclick="resetSettings()">DEFAULTS</button>
@@ -473,6 +476,138 @@ function scoreLeap(o,spot,gex,qData,p){
   return{score:Math.min(100,Math.round(score)),d,iv,ep,sp,oi,strike,fromHigh,tags,dte};
 }
 
+// ── UNFILTERED SCORER (for Top 10 scan) ─────────────────────────────────
+function scoreLeapOpen(o,spot,gex,qData){
+  const d=Math.abs(parseFloat(o.greeks?.delta)||0);
+  const iv=parseFloat(o.greeks?.mid_iv)||0;
+  const oi=parseInt(o.open_interest)||0;
+  const ep=extrPct(o,spot);const sp=spreadPct(o);
+  const strike=parseFloat(o.strike)||0;
+  const dte=dteDays(o.expiration_date);
+  // Only reject truly unusable contracts
+  if(d<0.05||oi<10||dte<30)return null;
+  if(!o.bid||o.bid<=0)return null;
+  const fromHigh=qData.week_52_high>0?((spot-qData.week_52_high)/qData.week_52_high)*100:0;
+  let score=0;const tags=[];
+  if(gex.putWall){const dist=Math.abs(strike-gex.putWall);score+=Math.max(0,28-dist*1.3);if(dist<=10)tags.push('GEX');}else score+=14;
+  if(iv<=.30)score+=20;else if(iv<=.40)score+=17;else if(iv<=.50)score+=13;else if(iv<=.60)score+=8;else if(iv<=.70)score+=4;else if(iv<=.80)score+=1;else tags.push('IV↑');
+  if(fromHigh<=-40)score+=18;else if(fromHigh<=-30)score+=15;else if(fromHigh<=-20)score+=11;else if(fromHigh<=-10)score+=6;else if(fromHigh<=-5)score+=3;
+  if(ep<=8)score+=15;else if(ep<=10)score+=13;else if(ep<=12)score+=10;else if(ep<=15)score+=7;else if(ep<=20)score+=3;
+  if(oi>=10000)score+=10;else if(oi>=5000)score+=8;else if(oi>=2000)score+=6;else if(oi>=1000)score+=4;else if(oi>=500)score+=2;
+  if(sp<=.8)score+=9;else if(sp<=1.2)score+=7;else if(sp<=1.8)score+=5;else if(sp<=2.5)score+=3;else if(sp<=3.5)score+=1;
+  if(gex.maxPain&&Math.abs(strike-gex.maxPain)<=10)score+=3;
+  if(gex.uoa?.some(u=>Math.abs(u.strike-strike)<5))tags.push('UOA');
+  const vs=qData.average_volume>0?qData.volume/qData.average_volume:1;
+  if(vs>=2){score+=2;tags.push('VOL');}
+  return{score:Math.min(100,Math.round(score)),d,iv,ep,sp,oi,strike,fromHigh,tags,dte};
+}
+
+// ── TOP 10 SCAN (ignores all settings) ──────────────────────────────────
+let topResults=[];
+async function runTopScan(){
+  if(scanRunning)return;
+  scanRunning=true;aborted=false;topResults=[];
+
+  const tickers=ALL_TICKERS.slice();
+  const conc=+$('f-conc').value||8;
+
+  $('scan-btn').style.display='none';
+  $('top10-btn').style.display='none';
+  $('stop-btn').style.display='block';
+  $('results').innerHTML='';
+  const t0=Date.now();
+
+  // Fetch all quotes (no price filter)
+  const BATCH=500;const qMap={};
+  const batches=[];
+  for(let i=0;i<tickers.length;i+=BATCH)batches.push(tickers.slice(i,i+BATCH));
+
+  setStatus('TOP 10 — fetching quotes for '+tickers.length+' tickers (no filters)...','running');
+  for(let bi=0;bi<batches.length;bi++){
+    if(aborted)break;
+    setStatus('TOP 10 — quotes batch '+(bi+1)+'/'+batches.length,'running');
+    showProgress(bi,batches.length,0,0);
+    try{
+      const raw=await trad('markets/quotes',{symbols:batches[bi].join(','),greeks:'false'});
+      const arr=raw?.quotes?.quote;
+      const list=Array.isArray(arr)?arr:arr?[arr]:[];
+      list.filter(q=>q?.symbol&&q?.last).forEach(q=>qMap[q.symbol]=q);
+    }catch(e){setStatus('Quote error: '+e.message,'err');}
+  }
+  if(aborted)return finishTop(t0);
+
+  const quotedTickers=Object.keys(qMap);
+  setStatus('TOP 10 — scanning '+quotedTickers.length+' tickers for highest scores...','running');
+
+  // Scan ALL chains — no pass 1 filtering at all
+  let completed=0;
+  const total=quotedTickers.length;
+  const scanStart=Date.now();
+
+  await pool(quotedTickers.map(t=>({sym:t,q:qMap[t]})),async(item)=>{
+    if(aborted)return;
+    try{
+      const expRaw=await trad('markets/options/expirations',{symbol:item.sym,includeAllRoots:'true'});
+      const exps=expRaw?.expirations?.date||(Array.isArray(expRaw)?expRaw:[]);
+      // Find the longest-dated expiration (365+ DTE preferred)
+      const exp=bestExp(exps,365);
+      if(!exp){completed++;return;}
+
+      const chainRaw=await trad('markets/options/chains',{symbol:item.sym,expiration:exp,greeks:'true'});
+      const opts=chainRaw?.options?.option||(Array.isArray(chainRaw)?chainRaw:[]);
+      if(!opts.length){completed++;return;}
+
+      const spot=item.q.last;
+      const gex=computeGEX(opts,spot);
+      const calls=opts.filter(o=>o.option_type==='call'&&o.greeks);
+
+      for(const o of calls){
+        const s=scoreLeapOpen(o,spot,gex,item.q);
+        if(!s)continue;
+        topResults.push({
+          sym:item.sym,desc:item.q.description||item.sym,spot,
+          strike:o.strike,exp:o.expiration_date,dte:s.dte,
+          premium:mid(o),bid:o.bid||0,delta:s.d,iv:s.iv,extr:s.ep,spread:s.sp,
+          oi:s.oi,fromHigh:s.fromHigh,score:s.score,tags:s.tags,
+          putWall:gex.putWall,maxPain:gex.maxPain,p1:0,
+          optSym:o.symbol
+        });
+        // Keep only top 50 in memory to avoid bloat, trim periodically
+        if(topResults.length>200){
+          topResults.sort((a,b)=>b.score-a.score);
+          topResults.length=50;
+        }
+      }
+    }catch(e){}
+
+    completed++;
+    const elapsed=(Date.now()-scanStart)/1000;
+    const rate=completed/elapsed;
+    const remaining=total-completed;
+    const eta=rate>0?remaining/rate:0;
+    setStatus('TOP 10 — '+item.sym+' ('+completed+'/'+total+') · best: '+(topResults.length?topResults.reduce((a,b)=>a.score>b.score?a:b).score:0),'running');
+    showProgress(completed,total,topResults.length,eta);
+  },conc);
+
+  finishTop(t0);
+}
+
+function finishTop(t0){
+  scanRunning=false;
+  $('scan-btn').style.display='block';
+  $('top10-btn').style.display='block';
+  $('stop-btn').style.display='none';
+  topResults.sort((a,b)=>b.score-a.score);
+  const best=topResults.slice(0,10);
+  // Store in allResults so sorting/buy buttons work
+  allResults=topResults;
+  render(best,{iv:1,extr:30,oi:10});
+  const elapsed=((Date.now()-t0)/1000).toFixed(1);
+  if(aborted) setStatus('TOP 10 STOPPED — best score: '+(best.length?best[0].score:0)+' · '+elapsed+'s','err');
+  else setStatus('TOP 10 DONE — best score: '+(best.length?best[0].score:0)+' · '+topResults.length+' contracts scored · '+elapsed+'s','done');
+  setTimeout(hideProgress,1500);
+}
+
 // ── UI HELPERS ───────────────────────────────────────────────────────────
 function setStatus(msg,state){
   const el=$('status');el.className='status '+(state||'');
@@ -513,6 +648,7 @@ async function runScan(){
   };
 
   $('scan-btn').style.display='none';
+  $('top10-btn').style.display='none';
   $('stop-btn').style.display='block';
   $('results').innerHTML='';
   const t0=Date.now();
@@ -624,6 +760,7 @@ async function runScan(){
 function finish(t0,p){
   scanRunning=false;
   $('scan-btn').style.display='block';
+  $('top10-btn').style.display='block';
   $('stop-btn').style.display='none';
   if(t0&&p){
     allResults.sort((a,b)=>b.score-a.score);
