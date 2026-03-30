@@ -3,294 +3,328 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>LEAP/SCAN — Top 50 Long Call Scanner</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>LEAP/SCAN</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#08090b;--s1:#0e1016;--s2:#13161e;--b1:#1a1f2b;--b2:#242c3a;--t1:#dde4f0;--t2:#8896ae;--t3:#4a5568;--ac:#00c8f0;--ac2:#0099be;--gr:#00e07a;--gr2:#00a855;--re:#ff3d57;--am:#ffb700;--am2:#cc9200;--pu:#a78bfa;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif}
+:root{--bg:#0a0a0a;--s1:#0f0f0f;--s2:#141414;--b1:#1e1e1e;--b2:#282828;--t1:#b0b0b0;--t2:#666;--t3:#3a3a3a;--ac:#00ff41;--ac2:#00cc33;--gr:#00e676;--re:#ff1744;--am:#ffab00;--mono:'IBM Plex Mono',monospace}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--t1);font-family:var(--sans);font-size:13px;min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,240,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,240,.018) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
-.wrap{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:20px 16px}
+body{background:var(--bg);color:var(--t1);font-family:var(--mono);font-size:12px;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,255,65,.012) 3px,rgba(0,255,65,.012) 4px);pointer-events:none;z-index:9999}
+.wrap{max-width:1500px;margin:0 auto;padding:16px 12px;position:relative;z-index:1}
 
-/* HEADER */
-.hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--b2)}
-.logo{font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-1px;line-height:1}
-.logo .slash{color:var(--t3)}
-.logo .scan{color:var(--ac)}
-.tagline{font-family:var(--mono);font-size:11px;color:var(--t3);margin-top:6px;letter-spacing:.04em}
-.scoring-key{display:flex;flex-direction:column;gap:2px;align-items:flex-end}
-.sk-row{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;color:var(--t3)}
-.sk-bar{height:3px;border-radius:2px;background:var(--b2)}
-.sk-fill{height:3px;border-radius:2px}
-.badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
-.badge{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:2px;border:1px solid;letter-spacing:.05em}
-.b-ac{border-color:var(--ac2);color:var(--ac)}
-.b-gr{border-color:var(--gr2);color:var(--gr)}
-.b-am{border-color:var(--am2);color:var(--am)}
-.b-mu{border-color:var(--b2);color:var(--t3)}
+.hdr{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--b1)}
+.logo{font-size:20px;font-weight:600;letter-spacing:-1px;color:var(--t1)}
+.logo .d{color:var(--t3)}.logo .g{color:var(--ac)}
+.hdr-r{font-size:9px;color:var(--t3);letter-spacing:.05em;text-align:right}
 
-/* CONTROLS */
-.panel{background:var(--s1);border:1px solid var(--b1);border-radius:6px;padding:16px;margin-bottom:14px}
-.panel-title{font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px}
+.panel{background:var(--s1);border:1px solid var(--b1);padding:12px;margin-bottom:8px}
+.ticker-row{display:flex;gap:8px;margin-bottom:10px;align-items:center}
+.ticker-row input{flex:1;background:var(--s2);border:1px solid var(--b1);color:var(--t1);font-family:var(--mono);font-size:11px;padding:7px 10px;outline:none}
+.ticker-row input:focus{border-color:var(--ac)}
+.ticker-row input::placeholder{color:var(--t3)}
+.ticker-count{font-size:10px;color:var(--t3);white-space:nowrap;flex-shrink:0}
 
-.basket-wrap{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;align-items:center}
-.bw-label{font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-right:4px;flex-shrink:0}
-.bp{font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:2px;border:1px solid var(--b2);color:var(--t3);background:transparent;cursor:pointer;transition:all .12s;letter-spacing:.03em}
-.bp:hover{border-color:var(--ac);color:var(--ac)}
-.bp.on{border-color:var(--ac);color:var(--ac);background:rgba(0,200,240,.07)}
-
-.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
-.fc{display:flex;flex-direction:column;gap:4px}
-.fc label{font-family:var(--mono);font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em}
-.fc label small{display:block;color:var(--ac2);font-size:9px;text-transform:none;letter-spacing:0;margin-top:1px}
-.fc input,.fc select{background:var(--s2);border:1px solid var(--b2);color:var(--t1);font-family:var(--mono);font-size:12px;padding:6px 9px;border-radius:3px;outline:none;width:100%;transition:border-color .12s}
+.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:10px}
+.fc{display:flex;flex-direction:column;gap:3px}
+.fc label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.fc label small{display:block;color:var(--ac2);font-size:8px;text-transform:none;letter-spacing:0;margin-top:1px}
+.fc input,.fc select{background:var(--s2);border:1px solid var(--b1);color:var(--t1);font-family:var(--mono);font-size:11px;padding:5px 7px;outline:none;width:100%}
 .fc input:focus,.fc select:focus{border-color:var(--ac)}
-.custom-input{background:var(--s2);border:1px solid var(--b2);color:var(--t1);font-family:var(--mono);font-size:11px;padding:7px 10px;border-radius:3px;outline:none;width:100%;margin-bottom:10px;transition:border-color .12s;letter-spacing:.02em}
-.custom-input:focus{border-color:var(--ac)}
-.custom-input::placeholder{color:var(--t3)}
 
-.two-pass-info{display:flex;align-items:flex-start;gap:10px;background:rgba(0,200,240,.05);border:1px solid rgba(0,200,240,.15);border-radius:4px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--t2);line-height:1.6}
-.tpi-icon{color:var(--ac);font-size:14px;flex-shrink:0;margin-top:1px}
+.btn-row{display:flex;gap:8px}
+.scan-btn{flex:1;padding:10px;border:1px solid var(--ac);background:transparent;color:var(--ac);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:background .12s}
+.scan-btn:hover{background:rgba(0,255,65,.08)}
+.scan-btn:disabled{border-color:var(--b2);color:var(--t3);cursor:not-allowed;background:transparent}
+.stop-btn{padding:10px 24px;border:1px solid var(--re);background:transparent;color:var(--re);font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;transition:background .12s}
+.stop-btn:hover{background:rgba(255,23,68,.08)}
 
-.scan-btn{width:100%;padding:11px;background:var(--ac);color:#000;border:none;border-radius:3px;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;letter-spacing:.08em;transition:all .15s}
-.scan-btn:hover{background:#33d5f5;transform:translateY(-1px)}
-.scan-btn:disabled{background:var(--b2);color:var(--t3);cursor:not-allowed;transform:none}
+.prog-wrap{margin-bottom:6px}
+.prog-bar{height:2px;background:var(--b1);overflow:hidden}
+.prog-fill{height:2px;background:var(--ac);transition:width .3s;width:0}
+.prog-text{display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:4px}
 
-/* STATUS */
-.status{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--s1);border:1px solid var(--b1);border-radius:4px;margin-bottom:10px;font-family:var(--mono);font-size:11px;color:var(--t3);min-height:36px;transition:all .2s}
-.status.running{border-color:rgba(0,200,240,.3);color:var(--t2)}
-.status.done{border-color:rgba(0,224,122,.3);color:var(--t2)}
-.status.err{border-color:rgba(255,61,87,.3);color:var(--re)}
-.sdot{width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0;transition:background .2s}
-.status.running .sdot{background:var(--ac);animation:blink 1s infinite}
-.status.done .sdot{background:var(--gr)}
-.status.err .sdot{background:var(--re)}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t3);padding:5px 0;margin-bottom:6px;min-height:24px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--t3);flex-shrink:0}
+.status.running .dot{background:var(--ac);animation:blink 1s infinite}
+.status.done .dot{background:var(--gr)}
+.status.err .dot{background:var(--re)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
 
-/* PROGRESS */
-.prog{height:2px;background:var(--b1);border-radius:1px;margin-bottom:10px;overflow:hidden;transition:opacity .3s}
-.prog.hidden{opacity:0}
-.prog-fill{height:2px;background:linear-gradient(90deg,var(--ac2),var(--ac));border-radius:1px;transition:width .4s ease;width:0}
-
-/* PHASE INDICATOR */
-.phase-row{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
-.phase{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--b2);color:var(--t3);transition:all .2s}
-.phase.active{border-color:var(--ac);color:var(--ac);background:rgba(0,200,240,.07)}
-.phase.complete{border-color:var(--gr2);color:var(--gr);background:rgba(0,224,122,.06)}
-.phase-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
-
-/* RESULTS */
-.results-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px}
-.stats-row{display:flex;gap:16px;flex-wrap:wrap}
+.results-hdr{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:8px}
 .stat{display:flex;flex-direction:column;gap:1px}
-.stat-label{font-family:var(--mono);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.07em}
-.stat-value{font-family:var(--mono);font-size:16px;font-weight:600}
-.sv-ac{color:var(--ac)}.sv-gr{color:var(--gr)}.sv-t{color:var(--t1)}
+.stat-l{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.stat-v{font-size:14px;font-weight:600}
+.sv-g{color:var(--ac)}.sv-w{color:var(--t1)}.sv-gr{color:var(--gr)}
 
-.tbl-wrap{overflow-x:auto;border:1px solid var(--b1);border-radius:6px}
-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
-thead{background:var(--s1);border-bottom:1px solid var(--b2)}
-th{padding:9px 11px;text-align:left;font-size:9.5px;color:var(--t3);font-weight:500;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none;transition:color .12s}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--b1)}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead{background:var(--s1)}
+th{padding:6px 8px;text-align:left;font-size:9px;color:var(--t3);font-weight:500;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--b1)}
 th:hover{color:var(--ac)}
 th.sorted{color:var(--ac)}
-.sa{font-size:8px;margin-left:3px;opacity:.5}
+.sa{font-size:7px;margin-left:2px;opacity:.4}
 th.sorted .sa{opacity:1}
-tbody tr{border-bottom:1px solid var(--b1);transition:background .1s}
-tbody tr:last-child{border-bottom:none}
-tbody tr:hover{background:rgba(0,200,240,.04)}
-tbody tr.gold{background:rgba(0,224,122,.04)}
-tbody tr.gold:hover{background:rgba(0,224,122,.08)}
-td{padding:8px 11px;white-space:nowrap;vertical-align:middle}
+tbody tr{border-bottom:1px solid var(--b1);transition:background .08s}
+tbody tr:hover{background:rgba(0,255,65,.03)}
+tbody tr.top3{background:rgba(0,230,118,.03)}
+tbody tr.top3:hover{background:rgba(0,230,118,.06)}
+td{padding:5px 8px;white-space:nowrap}
 
-.rank{font-size:10px;color:var(--t3);display:inline-block;min-width:22px}
-.gold .rank{color:var(--gr)}
-.sym{font-size:13px;font-weight:500;color:var(--t1)}
-.desc{font-size:9.5px;color:var(--t3);display:block;max-width:130px;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-.strike{color:var(--ac)}
-.exp-d{color:var(--t2);font-size:10.5px}
-.prem{font-weight:500;color:var(--t1)}
-.ok{color:var(--gr)}.warn{color:var(--am)}.bad{color:var(--re)}.neu{color:var(--t1)}.mu{color:var(--t3)}
+.sym{font-size:12px;font-weight:500;color:var(--t1)}
+.desc{font-size:9px;color:var(--t3);display:block;max-width:110px;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.score-w{display:flex;align-items:center;gap:5px}
+.score-n{font-weight:600;font-size:12px;min-width:22px}
+.score-bg{width:28px;height:2px;background:var(--b2)}
+.score-fl{height:2px}
+.tag{display:inline-block;font-size:8px;padding:1px 4px;border:1px solid;letter-spacing:.03em;margin-left:3px;vertical-align:middle}
+.tag-gex{color:var(--gr);border-color:rgba(0,230,118,.3)}.tag-uoa{color:#bb86fc;border-color:rgba(187,134,252,.3)}.tag-vol{color:var(--am);border-color:rgba(255,171,0,.3)}.tag-iv{color:var(--re);border-color:rgba(255,23,68,.3)}
+.ok{color:var(--gr)}.warn{color:var(--am)}.bad{color:var(--re)}.dim{color:var(--t3)}.wht{color:var(--t1)}
+.rk{font-size:9px;color:var(--t3);min-width:20px;display:inline-block}
+.top3 .rk{color:var(--gr)}
 
-.score-wrap{display:flex;align-items:center;gap:6px}
-.score-n{font-weight:600;font-size:13px;min-width:26px}
-.score-track{width:36px;height:3px;background:var(--b2);border-radius:2px;overflow:hidden}
-.score-bar{height:3px;border-radius:2px}
+.buy-btn{font-size:9px;padding:2px 8px;border:1px solid var(--ac);color:var(--ac);background:transparent;cursor:pointer;font-family:var(--mono);letter-spacing:.04em}
+.buy-btn:hover{background:rgba(0,255,65,.12)}
+.buy-btn:disabled{border-color:var(--b2);color:var(--t3);cursor:not-allowed}
 
-.tag{display:inline-block;font-size:9px;padding:1px 5px;border-radius:2px;margin-left:3px;font-weight:500;letter-spacing:.04em;vertical-align:middle}
-.tag-gex{background:rgba(0,224,122,.12);color:var(--gr);border:1px solid rgba(0,224,122,.25)}
-.tag-uoa{background:rgba(167,139,250,.12);color:var(--pu);border:1px solid rgba(167,139,250,.25)}
-.tag-vol{background:rgba(255,183,0,.1);color:var(--am);border:1px solid rgba(255,183,0,.2)}
-.tag-iv{background:rgba(255,61,87,.1);color:var(--re);border:1px solid rgba(255,61,87,.2)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:9px;color:var(--t3);padding:6px 8px;border:1px solid var(--b1);margin-bottom:8px;background:var(--s1)}
+.le{display:flex;align-items:center;gap:4px}
+.led{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 
-.empty{text-align:center;padding:56px 16px;color:var(--t3);font-family:var(--mono)}
-.empty .big{font-size:36px;margin-bottom:14px;opacity:.2}
-.empty p{font-size:11px;color:var(--t3);margin-top:6px;max-width:400px;margin-left:auto;margin-right:auto;line-height:1.7}
+.empty{text-align:center;padding:48px 16px;color:var(--t3)}
+.empty .big{font-size:24px;margin-bottom:10px;opacity:.25}
 
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--t3);padding:8px 12px;background:var(--s1);border:1px solid var(--b1);border-radius:4px;margin-bottom:10px}
-.le{display:flex;align-items:center;gap:5px}
-.led{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal-box{background:var(--bg);border:1px solid var(--ac);padding:20px;width:380px;max-width:95vw}
+.modal-title{font-size:11px;color:var(--ac);font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--b1)}
+.modal-contract{font-size:13px;color:var(--t1);margin-bottom:12px;font-weight:500}
+.mr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:10px}
+.mr label{color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.mr input{width:90px;text-align:right;background:var(--s2);border:1px solid var(--b1);color:var(--t1);font-family:var(--mono);font-size:11px;padding:4px 6px;outline:none}
+.mr input:focus{border-color:var(--ac)}
+.mr span{color:var(--t2);font-size:10px}
+.modal-actions{display:flex;gap:8px;margin-top:14px}
+.modal-actions button{flex:1;padding:8px;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.08em;text-transform:uppercase;border:1px solid}
+.btn-exec{background:transparent;color:var(--ac);border-color:var(--ac)}
+.btn-exec:hover{background:rgba(0,255,65,.08)}
+.btn-close{background:transparent;color:var(--t3);border-color:var(--b2)}
+.btn-close:hover{background:rgba(255,255,255,.03)}
+.ord-status{font-size:10px;margin-top:12px;padding:8px;border:1px solid var(--b1);color:var(--t3);min-height:36px;line-height:1.5}
+.ord-status.running{border-color:rgba(0,255,65,.3);color:var(--ac)}
+.ord-status.filled{border-color:rgba(0,230,118,.4);color:var(--gr)}
+.ord-status.error{border-color:rgba(255,23,68,.3);color:var(--re)}
 
-::-webkit-scrollbar{width:5px;height:5px}
+.api-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.api-row label{font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.api-row input{flex:1;background:var(--s2);border:1px solid var(--b1);color:var(--t1);font-family:var(--mono);font-size:10px;padding:5px 7px;outline:none}
+.api-row input:focus{border-color:var(--ac)}
+.local-badge{font-size:9px;color:var(--ac);border:1px solid var(--ac2);padding:2px 6px;letter-spacing:.04em}
+
+.scoring-key{font-size:9px;color:var(--t3);display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.sk-item{display:flex;align-items:center;gap:4px}
+.sk-bar{height:2px;border-radius:1px}
+
+::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:var(--s1)}
-::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+::-webkit-scrollbar-thumb{background:var(--b2)}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<!-- HEADER -->
 <div class="hdr">
   <div>
-    <div class="logo">LEAP<span class="slash">/</span><span class="scan">SCAN</span></div>
-    <div class="tagline">2-pass · 1,400+ tickers · GEX-anchored strikes · long calls only · live Tradier</div>
-    <div class="badges">
-      <span class="badge b-ac">pass 1: quote filter</span>
-      <span class="badge b-gr">pass 2: chain scan</span>
-      <span class="badge b-am">top 50 ranked</span>
-      <span class="badge b-mu">δ 0.75–0.87 · 365+ DTE</span>
+    <div class="logo">LEAP<span class="d">/</span><span class="g">SCAN</span></div>
+    <div class="scoring-key">
+      <span class="sk-item"><span class="sk-bar" style="width:28px;background:var(--gr)"></span>GEX 28</span>
+      <span class="sk-item"><span class="sk-bar" style="width:20px;background:var(--ac)"></span>IV 20</span>
+      <span class="sk-item"><span class="sk-bar" style="width:18px;background:var(--am)"></span>52w 18</span>
+      <span class="sk-item"><span class="sk-bar" style="width:15px;background:var(--t2)"></span>Extr 15</span>
+      <span class="sk-item"><span class="sk-bar" style="width:19px;background:var(--t3)"></span>OI+Sprd 19</span>
     </div>
   </div>
-  <div class="scoring-key">
-    <div style="font-family:var(--mono);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">scoring weights</div>
-    <div class="sk-row"><div class="sk-bar" style="width:70px"><div class="sk-fill" style="width:100%;background:var(--gr)"></div></div><span>GEX put wall 28pts</span></div>
-    <div class="sk-row"><div class="sk-bar" style="width:70px"><div class="sk-fill" style="width:71%;background:var(--ac)"></div></div><span>low IV entry 20pts</span></div>
-    <div class="sk-row"><div class="sk-bar" style="width:70px"><div class="sk-fill" style="width:64%;background:var(--am)"></div></div><span>off 52w high 18pts</span></div>
-    <div class="sk-row"><div class="sk-bar" style="width:70px"><div class="sk-fill" style="width:54%;background:var(--t2)"></div></div><span>extrinsic qual 15pts</span></div>
-    <div class="sk-row"><div class="sk-bar" style="width:70px"><div class="sk-fill" style="width:35%;background:var(--t3)"></div></div><span>OI + spread 19pts</span></div>
+  <div class="hdr-r">
+    <span id="mode-badge"></span>
+    <div style="margin-top:4px">2-PASS · GEX-SCORED · LONG CALLS</div>
   </div>
 </div>
 
-<!-- CONTROLS -->
 <div class="panel">
-  <div class="panel-title">basket selection — click one or more</div>
-  <div class="basket-wrap">
-    <span class="bw-label">baskets</span>
-    <button class="bp" data-b="MY PICKS" onclick="toggleBasket(this)">MY PICKS</button>
-    <button class="bp" data-b="MAG 7" onclick="toggleBasket(this)">MAG 7</button>
-    <button class="bp" data-b="AI/SEMIS" onclick="toggleBasket(this)">AI/SEMIS</button>
-    <button class="bp" data-b="DEFENSE" onclick="toggleBasket(this)">DEFENSE</button>
-    <button class="bp" data-b="FIBER" onclick="toggleBasket(this)">FIBER</button>
-    <button class="bp" data-b="QUANTUM" onclick="toggleBasket(this)">QUANTUM</button>
-    <button class="bp" data-b="CRYPTO" onclick="toggleBasket(this)">CRYPTO</button>
-    <button class="bp" data-b="SPACE" onclick="toggleBasket(this)">SPACE/EV</button>
-    <button class="bp" data-b="SAAS" onclick="toggleBasket(this)">SAAS</button>
-    <button class="bp" data-b="CYBER" onclick="toggleBasket(this)">CYBER</button>
-    <button class="bp" data-b="ENERGY" onclick="toggleBasket(this)">ENERGY</button>
-    <button class="bp" data-b="FINTECH" onclick="toggleBasket(this)">FINTECH</button>
-    <button class="bp" data-b="URANIUM" onclick="toggleBasket(this)">URANIUM</button>
-    <button class="bp" data-b="FULL1" onclick="toggleBasket(this)">WATCHLIST A</button>
-    <button class="bp" data-b="FULL2" onclick="toggleBasket(this)">WATCHLIST B</button>
-    <button class="bp" data-b="FULL3" onclick="toggleBasket(this)">WATCHLIST C</button>
-    <button class="bp" data-b="FULL4" onclick="toggleBasket(this)">WATCHLIST D</button>
-    <button class="bp" data-b="FULL5" onclick="toggleBasket(this)">WATCHLIST E</button>
-    <button class="bp" data-b="FULL6" onclick="toggleBasket(this)">WATCHLIST F</button>
-    <button class="bp" data-b="FULL7" onclick="toggleBasket(this)">WATCHLIST G</button>
-    <button class="bp" data-b="ALL" onclick="selectAll()">★ ALL 1,400+</button>
+  <div class="ticker-row">
+    <input id="tickers-input" placeholder="ALL tickers by default — or paste custom: NVDA,PLTR,AMZN..."/>
+    <span class="ticker-count" id="ticker-count"></span>
   </div>
-  <input class="custom-input" id="tickers-input" placeholder="or paste your own tickers: NVDA,PLTR,AMZN,MU..."/>
 
-  <div class="two-pass-info">
-    <span class="tpi-icon">◈</span>
-    <div><strong style="color:var(--ac)">2-pass engine:</strong> Pass 1 fetches all quotes in batch (instant) and filters by price action score — % off 52w high, volume surge, range position. Only the top candidates proceed to Pass 2 where LEAP chains are pulled and scored. This lets you scan 1,400 tickers in minutes instead of hours.</div>
+  <div id="api-section" class="api-row" style="display:none">
+    <label>API KEY</label>
+    <input id="api-key" type="password" value="5eebf62a6678b05dc5e5d5b58c15f9b8"/>
   </div>
 
   <div class="filters">
-    <div class="fc"><label>Pass 1 — max off high %<small>filter before chain pull</small></label><input type="number" id="f-high" value="70" min="5" max="100" step="5"/></div>
-    <div class="fc"><label>Pass 1 — top N to chain scan<small>after quote filter</small></label><input type="number" id="f-topn1" value="60" min="10" max="200" step="10"/></div>
+    <div class="fc"><label>Min price $<small>stock floor</small></label><input type="number" id="f-minp" value="5" min="0" max="10000" step="1"/></div>
+    <div class="fc"><label>Max price $<small>stock ceiling</small></label><input type="number" id="f-maxp" value="1000" min="0" max="100000" step="10"/></div>
+    <div class="fc"><label>Max off high %<small>52w filter</small></label><input type="number" id="f-high" value="70" min="5" max="100" step="5"/></div>
+    <div class="fc"><label>Top N pass 1<small>to chain scan</small></label><input type="number" id="f-topn1" value="60" min="10" max="400" step="10"/></div>
     <div class="fc"><label>Min DTE<small>365+ = LEAP</small></label><input type="number" id="f-dte" value="365" min="180" max="730" step="30"/></div>
-    <div class="fc"><label>Delta range<small>0.75–0.87 optimal</small></label>
-      <div style="display:flex;gap:4px">
-        <input type="number" id="f-dmin" value="0.75" min="0.5" max="0.95" step="0.01" style="width:50%"/>
-        <input type="number" id="f-dmax" value="0.87" min="0.5" max="0.99" step="0.01" style="width:50%"/>
-      </div>
+    <div class="fc"><label>Delta range<small>0.75-0.87</small></label>
+      <div style="display:flex;gap:4px"><input type="number" id="f-dmin" value="0.75" min="0.5" max="0.95" step="0.01" style="width:50%"/><input type="number" id="f-dmax" value="0.87" min="0.5" max="0.99" step="0.01" style="width:50%"/></div>
     </div>
-    <div class="fc"><label>Max extrinsic %<small>15% hard cap</small></label><input type="number" id="f-extr" value="15" min="5" max="35" step="1"/></div>
-    <div class="fc"><label>Max IV<small>≤0.65 = buy zone</small></label><input type="number" id="f-iv" value="0.80" min="0.10" max="3.0" step="0.05"/></div>
-    <div class="fc"><label>Min OI<small>500 = institutional</small></label><input type="number" id="f-oi" value="300" min="50" max="5000" step="50"/></div>
+    <div class="fc"><label>Max extrinsic %<small>15% cap</small></label><input type="number" id="f-extr" value="15" min="5" max="35" step="1"/></div>
+    <div class="fc"><label>Max IV<small>0.65 buy zone</small></label><input type="number" id="f-iv" value="0.80" min="0.10" max="3.0" step="0.05"/></div>
+    <div class="fc"><label>Min OI<small>500+ institutional</small></label><input type="number" id="f-oi" value="300" min="50" max="5000" step="50"/></div>
     <div class="fc"><label>Max spread %<small>2% = tight</small></label><input type="number" id="f-sp" value="3" min="0.5" max="15" step="0.5"/></div>
-    <div class="fc"><label>Show top N<small>contracts in output</small></label>
-      <select id="f-show"><option value="25">Top 25</option><option value="50" selected>Top 50</option><option value="100">Top 100</option></select>
+    <div class="fc"><label>Concurrency<small>parallel chains</small></label><input type="number" id="f-conc" value="8" min="1" max="20" step="1"/></div>
+    <div class="fc"><label>Show top N<small>output rows</small></label>
+      <select id="f-show"><option value="25">25</option><option value="50" selected>50</option><option value="100">100</option></select>
     </div>
   </div>
-  <button class="scan-btn" id="scan-btn" onclick="runScan()">▶ RUN LEAP SCAN</button>
+
+  <div class="btn-row">
+    <button class="scan-btn" id="scan-btn" onclick="runScan()">&#9654; SCAN ALL</button>
+    <button class="stop-btn" id="stop-btn" onclick="stopScan()" style="display:none">&#9632; STOP</button>
+  </div>
 </div>
 
-<!-- STATUS + PROGRESS -->
-<div class="status" id="status"><div class="sdot"></div><span id="status-txt">Select baskets or paste tickers, then run scan.</span></div>
-<div class="prog" id="prog"><div class="prog-fill" id="prog-fill"></div></div>
-
-<!-- PHASE INDICATORS -->
-<div class="phase-row" id="phases" style="display:none">
-  <div class="phase" id="ph1"><span class="phase-dot"></span>Pass 1: quote fetch + filter</div>
-  <div class="phase" id="ph2"><span class="phase-dot"></span>Pass 2: chain scan + GEX</div>
-  <div class="phase" id="ph3"><span class="phase-dot"></span>Rank + render</div>
+<div class="prog-wrap" id="prog-wrap" style="display:none">
+  <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+  <div class="prog-text">
+    <span id="prog-left"></span>
+    <span id="prog-right"></span>
+  </div>
 </div>
 
-<!-- RESULTS -->
+<div class="status" id="status"><div class="dot"></div><span id="status-txt">Ready. Scan all tickers or enter custom list.</span></div>
+
 <div id="results">
-  <div class="empty"><div class="big">◈</div><div>No scan running yet.</div>
-  <p>Select a basket — or hit ★ ALL 1,400+ to pull every ticker through pass 1, then scan the top candidates. Results show ticker, strike, DTE, and contract premium for every qualifying long call, ranked by profitability score.</p></div>
+  <div class="empty"><div class="big">&#9670;</div><div>No scan running.</div></div>
 </div>
 
-</div><!-- /wrap -->
+</div>
+
+<!-- ORDER MODAL -->
+<div class="modal" id="order-modal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-title">BUY TO OPEN</div>
+    <div class="modal-contract" id="ord-contract"></div>
+    <div class="mr"><label>Current Mid</label><span id="ord-mid"></span></div>
+    <div class="mr"><label>Quantity</label><input type="number" id="ord-qty" value="1" min="1" max="999"/></div>
+    <div class="mr"><label>Start Price</label><input type="number" id="ord-price" step="0.05" oninput="updateMaxPrice()"/></div>
+    <div class="mr"><label>Increment</label><span>$0.05 / attempt</span></div>
+    <div class="mr"><label>Max Attempts</label><input type="number" id="ord-attempts" value="50" min="1" max="100" oninput="updateMaxPrice()"/></div>
+    <div class="mr"><label>Max Price</label><span id="ord-max" style="color:var(--am)"></span></div>
+    <div class="modal-actions">
+      <button class="btn-exec" id="btn-exec" onclick="executeOrder()">EXECUTE</button>
+      <button class="btn-close" onclick="closeOrderModal()">CANCEL</button>
+    </div>
+    <div class="ord-status" id="ord-status"></div>
+  </div>
+</div>
 
 <script>
-// ─── FULL WATCHLIST ───────────────────────────────────────────────────────
-const BASKETS={
-'MY PICKS':'NVDA,PLTR,MRVL,MU,AMZN,MSFT,GOOGL,AMD,SMCI,ZS,COHR,AAOI,LITE,GLW,KTOS,AVAV,RTX,NOC,LMT,AMAT,LRCX,META,TSLA,ARM,CRWD,DDOG,NET,IONQ,ASTS,RKLB,MARA,RIOT,CLSK',
-'MAG 7':'AAPL,MSFT,GOOGL,AMZN,NVDA,META,TSLA',
-'AI/SEMIS':'NVDA,AMD,AMAT,LRCX,KLAC,SNPS,CDNS,MRVL,ARM,SMCI,MU,INTC,QCOM,NXPI,ADI,TER,AVGO,TSM,ASML',
-'DEFENSE':'KTOS,AVAV,PLTR,RTX,NOC,LMT,GD,HWM,TDG,BA,HAL,GEV,LHX,AXON',
-'FIBER':'LITE,COHR,AAOI,GLW,MRVL,CIEN,VIAV',
-'QUANTUM':'IONQ,QUBT,RGTI,QBTS',
+// ── CONFIG ───────────────────────────────────────────────────────────────
+const IS_LOCAL = ['localhost','127.0.0.1'].includes(location.hostname);
+const SANDBOX_KEY = '5eebf62a6678b05dc5e5d5b58c15f9b8';
+
+// ── TICKERS ──────────────────────────────────────────────────────────────
+const LISTS={
+'PICKS':'NVDA,PLTR,MRVL,MU,AMZN,MSFT,GOOGL,AMD,SMCI,ZS,COHR,AAOI,LITE,GLW,KTOS,AVAV,RTX,NOC,LMT,AMAT,LRCX,META,TSLA,ARM,CRWD,DDOG,NET,IONQ,ASTS,RKLB,MARA,RIOT,CLSK',
+'MAG7':'AAPL,MSFT,GOOGL,AMZN,NVDA,META,TSLA',
+'SEMIS':'NVDA,AMD,AMAT,LRCX,KLAC,SNPS,CDNS,MRVL,ARM,SMCI,MU,INTC,QCOM,NXPI,ADI,TER,AVGO,TSM,ASML',
+'DEF':'KTOS,AVAV,PLTR,RTX,NOC,LMT,GD,HWM,TDG,BA,HAL,GEV,LHX,AXON',
+'FIB':'LITE,COHR,AAOI,GLW,MRVL,CIEN,VIAV',
+'QC':'IONQ,QUBT,RGTI,QBTS',
 'CRYPTO':'MARA,RIOT,CLSK,CIFR,CORZ,IREN,COIN,HOOD,WULF,BTBT,MSTR',
 'SPACE':'JOBY,ACHR,LUNR,ASTS,RKLB,RIVN,LCID,RCAT,ONDS,UMAC,RDW,SPCE',
 'SAAS':'CRM,NOW,SNOW,DDOG,NET,ZS,TEAM,MDB,WDAY,GTLB,CFLT,OKTA,TWLO,HUBS,VEEV,DOCU',
 'CYBER':'CRWD,PANW,FTNT,ZS,OKTA,S,TENB,VRNS,CYBR',
 'ENERGY':'XOM,CVX,COP,EOG,OXY,DVN,HAL,SLB,AR,RRC,EQT,FANG,OVV',
-'FINTECH':'SQ,COIN,HOOD,AFRM,SOFI,PYPL,BILL,UPST,NU,CPNG,IBKR,SCHW',
-'URANIUM':'UUUU,CCJ,DNN,LEU,UEC',
-'FULL1':'AAPL,MSFT,GOOGL,AMZN,NVDA,META,TSLA,AVGO,ORCL,CRM,AMD,ADBE,CSCO,ACN,IBM,INTC,INTU,NOW,QCOM,TXN,AMAT,ADI,LRCX,KLAC,SNPS,CDNS,MCHP,FTNT,PANW,CRWD,WDAY,MRVL,MU,HPQ,HPE,DELL,NTAP,WDC,STX,ZBRA,TER,SMCI,ARM,PLTR,SNOW,DDOG,NET,ZS,TEAM,MDB',
-'FULL2':'HUBS,VEEV,DOCU,OKTA,TWLO,TTD,U,RBLX,SNAP,PINS,SHOP,SQ,COIN,HOOD,AFRM,SOFI,MARA,RIOT,CLSK,JPM,V,MA,BAC,WFC,GS,MS,SPGI,BLK,C,SCHW,CB,MMC,PGR,ICE,CME,AON,AJG,MET,AFL,PRU,TRV,ALL,AIG,USB,PNC,TFC,COF,BK,STT,FITB',
-'FULL3':'HBAN,MTB,RF,KEY,CFG,AXP,DFS,SYF,ALLY,FIS,FISV,GPN,PYPL,HD,MCD,NKE,LOW,SBUX,TJX,BKNG,CMG,ORLY,AZO,ROST,MAR,HLT,YUM,DHI,LEN,PHM,TOL,GRMN,POOL,TSCO,BBY,DG,DLTR,ULTA,LULU,F,GM,RIVN,LCID,ABNB,UBER,LYFT,DASH,DKNG,RCL,CCL,NCLH',
-'FULL4':'PG,KO,PEP,COST,WMT,PM,MO,MDLZ,CL,KHC,GIS,KR,ADM,TSN,MNST,STZ,CAT,GE,HON,UNP,UPS,RTX,BA,DE,LMT,MMM,GD,NOC,TDG,ITW,EMR,ETN,PH,ROK,CTAS,FAST,GWW,CSX,NSC,FDX,DAL,UAL,LUV,AAL,WM,RSG,XOM,CVX,COP,EOG,SLB',
-'FULL5':'MPC,PSX,VLO,OXY,DVN,HAL,BKR,KMI,WMB,OKE,LNG,NEE,DUK,SO,SRE,AEP,EXC,XEL,ED,PLD,AMT,CCI,EQIX,PSA,DLR,O,WELL,SPG,VICI,AVB,EQR,LIN,APD,SHW,ECL,FCX,NEM,NUE,STLD,VMC,MLM,DOW,DD,PPG,ALB,DIS,CMCSA,NFLX,T,VZ,TMUS,CHTR',
-'FULL6':'EA,TTWO,WBD,PARA,MTCH,ROKU,LYV,BABA,NIO,XPEV,JD,PDD,BIDU,TSM,ASML,SONY,SAP,GME,AMC,TLRY,CGC,SPCE,OPEN,UPST,AI,IONQ,QUBT,RGTI,PATH,CFLT,GTLB,ESTC,BILL,PCOR,CELH,DUOL,CAVA,TOST,SOUN,JOBY,ACHR,LUNR,ASTS,RKLB,FSLR,RUN,PLUG,BE,NU,MELI,AXON',
-'FULL7':'CORZ,IREN,WULF,BTBT,CLSK,CIFR,MARA,RIOT,KTOS,AVAV,HWM,GEV,AMAT,LRCX,TER,UUUU,CCJ,DNN,COHR,AAOI,LITE,GLW,MRVL,UMAC,ONDS,RDW,RCAT,APP,RDDT,IBKR,KKR,APO,BX,ARES,EQT,AR,RRC,CNX,OKLO,NNE,SMR,IONQ,QUBT,RGTI,QBTS,CRWV,CRCL,NBIS,ALAB,CRDO'
+'FIN':'SQ,COIN,HOOD,AFRM,SOFI,PYPL,BILL,UPST,NU,CPNG,IBKR,SCHW',
+'URAN':'UUUU,CCJ,DNN,LEU,UEC',
+'W1':'AAPL,MSFT,GOOGL,AMZN,NVDA,META,TSLA,AVGO,ORCL,CRM,AMD,ADBE,CSCO,ACN,IBM,INTC,INTU,NOW,QCOM,TXN,AMAT,ADI,LRCX,KLAC,SNPS,CDNS,MCHP,FTNT,PANW,CRWD,WDAY,MRVL,MU,HPQ,HPE,DELL,NTAP,WDC,STX,ZBRA,TER,SMCI,ARM,PLTR,SNOW,DDOG,NET,ZS,TEAM,MDB',
+'W2':'HUBS,VEEV,DOCU,OKTA,TWLO,TTD,U,RBLX,SNAP,PINS,SHOP,SQ,COIN,HOOD,AFRM,SOFI,MARA,RIOT,CLSK,JPM,V,MA,BAC,WFC,GS,MS,SPGI,BLK,C,SCHW,CB,MMC,PGR,ICE,CME,AON,AJG,MET,AFL,PRU,TRV,ALL,AIG,USB,PNC,TFC,COF,BK,STT,FITB',
+'W3':'HBAN,MTB,RF,KEY,CFG,AXP,DFS,SYF,ALLY,FIS,FISV,GPN,PYPL,HD,MCD,NKE,LOW,SBUX,TJX,BKNG,CMG,ORLY,AZO,ROST,MAR,HLT,YUM,DHI,LEN,PHM,TOL,GRMN,POOL,TSCO,BBY,DG,DLTR,ULTA,LULU,F,GM,RIVN,LCID,ABNB,UBER,LYFT,DASH,DKNG,RCL,CCL,NCLH',
+'W4':'PG,KO,PEP,COST,WMT,PM,MO,MDLZ,CL,KHC,GIS,KR,ADM,TSN,MNST,STZ,CAT,GE,HON,UNP,UPS,RTX,BA,DE,LMT,MMM,GD,NOC,TDG,ITW,EMR,ETN,PH,ROK,CTAS,FAST,GWW,CSX,NSC,FDX,DAL,UAL,LUV,AAL,WM,RSG,XOM,CVX,COP,EOG,SLB',
+'W5':'MPC,PSX,VLO,OXY,DVN,HAL,BKR,KMI,WMB,OKE,LNG,NEE,DUK,SO,SRE,AEP,EXC,XEL,ED,PLD,AMT,CCI,EQIX,PSA,DLR,O,WELL,SPG,VICI,AVB,EQR,LIN,APD,SHW,ECL,FCX,NEM,NUE,STLD,VMC,MLM,DOW,DD,PPG,ALB,DIS,CMCSA,NFLX,T,VZ,TMUS,CHTR',
+'W6':'EA,TTWO,WBD,PARA,MTCH,ROKU,LYV,BABA,NIO,XPEV,JD,PDD,BIDU,TSM,ASML,SONY,SAP,GME,AMC,TLRY,CGC,SPCE,OPEN,UPST,AI,IONQ,QUBT,RGTI,PATH,CFLT,GTLB,ESTC,BILL,PCOR,CELH,DUOL,CAVA,TOST,SOUN,JOBY,ACHR,LUNR,ASTS,RKLB,FSLR,RUN,PLUG,BE,NU,MELI,AXON',
+'W7':'CORZ,IREN,WULF,BTBT,CLSK,CIFR,MARA,RIOT,KTOS,AVAV,HWM,GEV,AMAT,LRCX,TER,UUUU,CCJ,DNN,COHR,AAOI,LITE,GLW,MRVL,UMAC,ONDS,RDW,RCAT,APP,RDDT,IBKR,KKR,APO,BX,ARES,EQT,AR,RRC,CNX,OKLO,NNE,SMR,IONQ,QUBT,RGTI,QBTS,CRWV,CRCL,NBIS,ALAB,CRDO'
 };
+const ALL_TICKERS=[...new Set(Object.values(LISTS).flatMap(v=>v.split(',')))];
 
-const ALL_TICKERS=[...new Set(Object.values(BASKETS).flatMap(v=>v.split(',')))];
+// ── STATE ────────────────────────────────────────────────────────────────
+let scanRunning=false, aborted=false, allResults=[], sortCol='score', sortDir=-1;
+let currentOrder=null, orderAborted=false, serverCfg=null;
 
-let active=new Set();
-let allResults=[];
-let sortCol='score';let sortDir=-1;
+// ── INIT ─────────────────────────────────────────────────────────────────
+(function init(){
+  const badge=document.getElementById('mode-badge');
+  if(IS_LOCAL){
+    badge.className='local-badge';
+    badge.textContent='LOCALHOST · TRADING ON';
+    document.getElementById('api-section').style.display='none';
+    fetch('/api/config').then(r=>r.json()).then(c=>{serverCfg=c;}).catch(()=>{});
+  } else {
+    badge.className='local-badge';
+    badge.style.borderColor='var(--am)';badge.style.color='var(--am)';
+    badge.textContent='SANDBOX · READ ONLY';
+    document.getElementById('api-section').style.display='flex';
+  }
+  document.getElementById('ticker-count').textContent=ALL_TICKERS.length+' tickers';
+  document.getElementById('tickers-input').addEventListener('input',function(){
+    const v=this.value.trim();
+    if(!v) document.getElementById('ticker-count').textContent=ALL_TICKERS.length+' tickers';
+    else document.getElementById('ticker-count').textContent=new Set(v.toUpperCase().split(',').map(s=>s.trim()).filter(Boolean)).size+' tickers';
+  });
+})();
 
-function toggleBasket(btn){
-  const b=btn.dataset.b;
-  if(active.has(b)){active.delete(b);btn.classList.remove('on');}
-  else{active.add(b);btn.classList.add('on');}
-  rebuildInput();
+// ── API ──────────────────────────────────────────────────────────────────
+async function trad(ep,params={}){
+  const qs=new URLSearchParams(params).toString();
+  if(IS_LOCAL){
+    const r=await fetch('/api/tradier/'+ep+'?'+qs);
+    if(!r.ok) throw new Error('API '+r.status);
+    return r.json();
+  } else {
+    const key=document.getElementById('api-key')?.value||SANDBOX_KEY;
+    const r=await fetch('https://sandbox.tradier.com/v1/'+ep+'?'+qs,{
+      headers:{'Authorization':'Bearer '+key,'Accept':'application/json'}
+    });
+    if(!r.ok) throw new Error('API '+r.status);
+    return r.json();
+  }
 }
-function selectAll(){
-  document.querySelectorAll('.bp').forEach(b=>b.classList.remove('on'));
-  active.clear();
-  document.getElementById('tickers-input').value=ALL_TICKERS.join(',');
+async function tradPost(ep,body){
+  if(!IS_LOCAL) throw new Error('Trading requires localhost');
+  const r=await fetch('/api/tradier/'+ep,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(body).toString()});
+  return r.json();
 }
-function rebuildInput(){
-  const all=new Set();
-  active.forEach(k=>BASKETS[k].split(',').forEach(t=>all.add(t.trim())));
-  const custom=document.getElementById('tickers-input').value;
-  if(custom.trim()&&!active.size)return;
-  document.getElementById('tickers-input').value=[...all].join(',');
+async function tradDelete(ep){
+  if(!IS_LOCAL) throw new Error('Trading requires localhost');
+  const r=await fetch('/api/tradier/'+ep,{method:'DELETE'});
+  return r.json();
 }
 
-// ─── HELPERS ──────────────────────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
 const mid=o=>((o.bid||0)+(o.ask||0))/2;
 const extrPct=(o,spot)=>{const m=mid(o),i=Math.max(0,spot-o.strike);return m>0?(Math.max(0,m-i)/m)*100:99;};
 const spreadPct=o=>{const m=mid(o);return m>0?((o.ask-o.bid)/m)*100:99;};
 const dteDays=e=>Math.round((new Date(e)-new Date())/86400000);
+const fmtTime=s=>{const m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;};
 
+function bestExp(exps,minDte){
+  const now=new Date();
+  const valid=(Array.isArray(exps)?exps:[]).filter(e=>Math.round((new Date(e)-now)/86400000)>=minDte).sort();
+  const pref=valid.filter(e=>{const d=Math.round((new Date(e)-now)/86400000);return d>=420&&d<=600;});
+  return pref[0]||valid[0]||null;
+}
+
+// ── CONCURRENT POOL ──────────────────────────────────────────────────────
+async function pool(items,fn,concurrency=8){
+  let idx=0;
+  async function worker(){while(idx<items.length&&!aborted){const i=idx++;try{await fn(items[i],i);}catch(e){}}}
+  await Promise.all(Array(Math.min(concurrency,items.length)).fill(0).map(()=>worker()));
+}
+
+// ── SCORING ──────────────────────────────────────────────────────────────
 function pass1Score(q){
   const spot=q.last,h52=q.week_52_high,l52=q.week_52_low,avgVol=q.average_volume;
   if(!spot||!h52||!l52)return 0;
@@ -338,19 +372,12 @@ function scoreLeap(o,spot,gex,qData,p){
   if(dte<p.dte-45)return null;
   const fromHigh=qData.week_52_high>0?((spot-qData.week_52_high)/qData.week_52_high)*100:0;
   let score=0;const tags=[];
-  // GEX put wall — PRIMARY 28pts
   if(gex.putWall){const dist=Math.abs(strike-gex.putWall);score+=Math.max(0,28-dist*1.3);if(dist<=10)tags.push('GEX');}else score+=14;
-  // Low IV 20pts
   if(iv<=.30)score+=20;else if(iv<=.40)score+=17;else if(iv<=.50)score+=13;else if(iv<=.60)score+=8;else if(iv<=.70)score+=4;else if(iv<=.80)score+=1;else tags.push('IV↑');
-  // Off 52w high 18pts
   if(fromHigh<=-40)score+=18;else if(fromHigh<=-30)score+=15;else if(fromHigh<=-20)score+=11;else if(fromHigh<=-10)score+=6;else if(fromHigh<=-5)score+=3;
-  // Extrinsic 15pts
   if(ep<=8)score+=15;else if(ep<=10)score+=13;else if(ep<=12)score+=10;else if(ep<=15)score+=7;else if(ep<=20)score+=3;
-  // OI 10pts
   if(oi>=10000)score+=10;else if(oi>=5000)score+=8;else if(oi>=2000)score+=6;else if(oi>=1000)score+=4;else if(oi>=500)score+=2;
-  // Spread 9pts
   if(sp<=.8)score+=9;else if(sp<=1.2)score+=7;else if(sp<=1.8)score+=5;else if(sp<=2.5)score+=3;else if(sp<=3.5)score+=1;
-  // Bonuses
   if(gex.maxPain&&Math.abs(strike-gex.maxPain)<=10)score+=3;
   if(gex.uoa?.some(u=>Math.abs(u.strike-strike)<5))tags.push('UOA');
   const vs=qData.average_volume>0?qData.volume/qData.average_volume:1;
@@ -358,214 +385,290 @@ function scoreLeap(o,spot,gex,qData,p){
   return{score:Math.min(100,Math.round(score)),d,iv,ep,sp,oi,strike,fromHigh,tags,dte};
 }
 
-// ─── API ──────────────────────────────────────────────────────────────────
-async function callAI(prompt){
-  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,messages:[{role:'user',content:prompt}]})});
-  return((await r.json()).content?.[0]?.text||'').replace(/```json|```/g,'').trim();
-}
-async function trad(ep,params){
-  const qs=new URLSearchParams(params).toString();
-  const txt=await callAI(`Tradier sandbox API proxy. Return ONLY raw JSON, no markdown.\nGET https://sandbox.tradier.com/v1/${ep}?${qs}\nHeaders: Authorization: Bearer 5eebf62a6678b05dc5e5d5b58c15f9b8, Accept: application/json`);
-  try{return JSON.parse(txt);}catch{return null;}
-}
-function bestExp(exps,minDte){
-  const now=new Date();
-  const valid=(Array.isArray(exps)?exps:[]).filter(e=>Math.round((new Date(e)-now)/86400000)>=minDte).sort();
-  const pref=valid.filter(e=>{const d=Math.round((new Date(e)-now)/86400000);return d>=420&&d<=600;});
-  return pref[0]||valid[0]||null;
-}
-
-// ─── STATUS/PROGRESS ──────────────────────────────────────────────────────
+// ── UI HELPERS ───────────────────────────────────────────────────────────
 function setStatus(msg,state){
-  const el=document.getElementById('status');
-  el.className='status '+(state||'');
-  document.getElementById('status-txt').textContent=msg;
+  const el=$('status');el.className='status '+(state||'');
+  $('status-txt').textContent=msg;
 }
-function setProgress(pct){document.getElementById('prog-fill').style.width=pct+'%';}
-function setPhase(ph){
-  ['ph1','ph2','ph3'].forEach((id,i)=>{
-    const el=document.getElementById(id);
-    if(i+1<ph)el.className='phase complete';
-    else if(i+1===ph)el.className='phase active';
-    else el.className='phase';
-  });
+function showProgress(completed,total,contracts,eta){
+  $('prog-wrap').style.display='block';
+  const pct=total>0?Math.round(completed/total*100):0;
+  $('prog-fill').style.width=pct+'%';
+  $('prog-left').textContent=completed+'/'+total+' tickers · '+contracts+' contracts';
+  $('prog-right').textContent=eta>0?'ETA '+fmtTime(eta):'';
 }
+function hideProgress(){$('prog-wrap').style.display='none';$('prog-fill').style.width='0';}
 
-// ─── MAIN SCAN ────────────────────────────────────────────────────────────
+// ── MAIN SCAN ────────────────────────────────────────────────────────────
 async function runScan(){
-  let tickerStr=document.getElementById('tickers-input').value;
-  if(!tickerStr.trim()){setStatus('Add tickers or select a basket first.','err');return;}
-  const tickers=[...new Set(tickerStr.toUpperCase().split(',').map(s=>s.trim()).filter(Boolean))];
+  if(scanRunning)return;
+  scanRunning=true;aborted=false;allResults=[];
+
+  const input=$('tickers-input').value.trim();
+  const tickers=input?[...new Set(input.toUpperCase().split(',').map(s=>s.trim()).filter(Boolean))]:ALL_TICKERS.slice();
 
   const p={
-    maxFromHigh:+document.getElementById('f-high').value,
-    topN1:+document.getElementById('f-topn1').value,
-    dte:+document.getElementById('f-dte').value,
-    dmin:+document.getElementById('f-dmin').value,
-    dmax:+document.getElementById('f-dmax').value,
-    extr:+document.getElementById('f-extr').value,
-    iv:+document.getElementById('f-iv').value,
-    oi:+document.getElementById('f-oi').value,
-    sp:+document.getElementById('f-sp').value,
-    show:+document.getElementById('f-show').value,
+    minPrice:+$('f-minp').value||0,
+    maxPrice:+$('f-maxp').value||Infinity,
+    maxFromHigh:+$('f-high').value,
+    topN1:+$('f-topn1').value,
+    dte:+$('f-dte').value,
+    dmin:+$('f-dmin').value,
+    dmax:+$('f-dmax').value,
+    extr:+$('f-extr').value,
+    iv:+$('f-iv').value,
+    oi:+$('f-oi').value,
+    sp:+$('f-sp').value,
+    show:+$('f-show').value,
+    conc:+$('f-conc').value||8,
   };
 
-  const btn=document.getElementById('scan-btn');
-  btn.disabled=true;btn.textContent='◈ SCANNING...';
-  allResults=[];
-  document.getElementById('phases').style.display='flex';
-  setProgress(0);
+  $('scan-btn').style.display='none';
+  $('stop-btn').style.display='block';
+  $('results').innerHTML='';
+  const t0=Date.now();
 
-  // ── PASS 1: BATCH QUOTE FETCH ──────────────────────────────────────────
-  setPhase(1);
-  setStatus(`Pass 1: fetching quotes for ${tickers.length} tickers in batches...`,'running');
-
-  // Tradier handles ~100 tickers per batch comfortably
-  const BATCH=100;
+  // ── PASS 1: BATCH QUOTES ──────────────────────────────────────────────
+  setStatus('PASS 1 — fetching quotes for '+tickers.length+' tickers...','running');
+  const BATCH=500;
   const qMap={};
   const batches=[];
   for(let i=0;i<tickers.length;i+=BATCH)batches.push(tickers.slice(i,i+BATCH));
 
   for(let bi=0;bi<batches.length;bi++){
-    setStatus(`Pass 1: fetching quotes (batch ${bi+1}/${batches.length} · ${tickers.length} total tickers)...`,'running');
-    setProgress(Math.round((bi/batches.length)*35));
-    const raw=await trad('markets/quotes',{symbols:batches[bi].join(','),greeks:false});
-    const arr=raw?.quotes?.quote?(Array.isArray(raw.quotes.quote)?raw.quotes.quote:[raw.quotes.quote]):(Array.isArray(raw)?raw:[]);
-    arr.filter(q=>q?.symbol).forEach(q=>qMap[q.symbol]=q);
+    if(aborted)break;
+    setStatus('PASS 1 — quotes batch '+(bi+1)+'/'+batches.length,'running');
+    showProgress(bi,batches.length,0,0);
+    try{
+      const raw=await trad('markets/quotes',{symbols:batches[bi].join(','),greeks:'false'});
+      const arr=raw?.quotes?.quote;
+      const list=Array.isArray(arr)?arr:arr?[arr]:[];
+      list.filter(q=>q?.symbol).forEach(q=>qMap[q.symbol]=q);
+    }catch(e){setStatus('PASS 1 error: '+e.message,'err');}
   }
 
-  // Score pass 1 and filter
+  if(aborted)return finish(t0,p);
+
+  // Filter by price + score
   const scored1=tickers
-    .filter(t=>qMap[t]?.last&&qMap[t]?.week_52_high)
+    .filter(t=>{
+      const q=qMap[t];
+      if(!q?.last||!q?.week_52_high)return false;
+      if(q.last<p.minPrice||q.last>p.maxPrice)return false;
+      return true;
+    })
     .map(t=>({sym:t,q:qMap[t],p1:pass1Score(qMap[t])}))
     .filter(x=>{
-      const fromHigh=x.q.week_52_high>0?((x.q.last-x.q.week_52_high)/x.q.week_52_high)*100:0;
-      return Math.abs(fromHigh)<=p.maxFromHigh||fromHigh>=0; // keep all within range
+      const fh=x.q.week_52_high>0?((x.q.last-x.q.week_52_high)/x.q.week_52_high)*100:0;
+      return Math.abs(fh)<=p.maxFromHigh||fh>=0;
     })
     .sort((a,b)=>b.p1-a.p1)
     .slice(0,p.topN1);
 
-  setStatus(`Pass 1 complete — ${Object.keys(qMap).length} quoted, ${scored1.length} passed to chain scan.`,'running');
-  setProgress(40);
+  setStatus('PASS 1 done — '+Object.keys(qMap).length+' quoted, '+scored1.length+' to chain scan','running');
 
-  // ── PASS 2: CHAIN SCAN ─────────────────────────────────────────────────
-  setPhase(2);
-  let scanned2=0;
+  // ── PASS 2: CONCURRENT CHAIN SCAN ─────────────────────────────────────
+  let completed=0;
+  const total=scored1.length;
+  const scanStart=Date.now();
 
-  for(const item of scored1){
-    scanned2++;
-    const pct=40+Math.round((scanned2/scored1.length)*55);
-    setStatus(`Pass 2: scanning ${item.sym} (${scanned2}/${scored1.length})...`,'running');
-    setProgress(pct);
+  await pool(scored1,async(item)=>{
+    if(aborted)return;
     try{
-      const expRaw=await trad('markets/options/expirations',{symbol:item.sym,includeAllRoots:true});
+      const expRaw=await trad('markets/options/expirations',{symbol:item.sym,includeAllRoots:'true'});
       const exps=expRaw?.expirations?.date||(Array.isArray(expRaw)?expRaw:[]);
       const exp=bestExp(exps,p.dte);
-      if(!exp)continue;
-      const chainRaw=await trad('markets/options/chains',{symbol:item.sym,expiration:exp,greeks:true});
+      if(!exp){completed++;return;}
+
+      const chainRaw=await trad('markets/options/chains',{symbol:item.sym,expiration:exp,greeks:'true'});
       const opts=chainRaw?.options?.option||(Array.isArray(chainRaw)?chainRaw:[]);
-      if(!opts.length)continue;
+      if(!opts.length){completed++;return;}
+
       const spot=item.q.last;
       const gex=computeGEX(opts,spot);
       const calls=opts.filter(o=>o.option_type==='call'&&o.greeks);
+
       for(const o of calls){
         const s=scoreLeap(o,spot,gex,item.q,p);
         if(!s)continue;
-        allResults.push({sym:item.sym,desc:item.q.description||item.sym,spot,strike:o.strike,exp:o.expiration_date,dte:s.dte,premium:mid(o),delta:s.d,iv:s.iv,extr:s.ep,spread:s.sp,oi:s.oi,fromHigh:s.fromHigh,score:s.score,tags:s.tags,putWall:gex.putWall,maxPain:gex.maxPain,p1:item.p1});
+        allResults.push({
+          sym:item.sym,desc:item.q.description||item.sym,spot,
+          strike:o.strike,exp:o.expiration_date,dte:s.dte,
+          premium:mid(o),bid:o.bid||0,delta:s.d,iv:s.iv,extr:s.ep,spread:s.sp,
+          oi:s.oi,fromHigh:s.fromHigh,score:s.score,tags:s.tags,
+          putWall:gex.putWall,maxPain:gex.maxPain,p1:item.p1,
+          optSym:o.symbol
+        });
       }
     }catch(e){}
-  }
 
-  // ── PASS 3: RANK + RENDER ─────────────────────────────────────────────
-  setPhase(3);
-  setProgress(98);
-  allResults.sort((a,b)=>b.score-a.score);
-  render(allResults.slice(0,p.show),p);
-  setProgress(100);
-  setTimeout(()=>setProgress(0),800);
-  setStatus(`Done — ${scored1.length} tickers scanned · ${allResults.length} qualifying contracts · showing top ${Math.min(p.show,allResults.length)}`,'done');
-  btn.disabled=false;btn.textContent='▶ RUN LEAP SCAN';
+    completed++;
+    const elapsed=(Date.now()-scanStart)/1000;
+    const rate=completed/elapsed;
+    const remaining=total-completed;
+    const eta=rate>0?remaining/rate:0;
+    setStatus('PASS 2 — '+item.sym+' ('+completed+'/'+total+')','running');
+    showProgress(completed,total,allResults.length,eta);
+  },p.conc);
+
+  finish(t0,p);
 }
 
-// ─── RENDER ───────────────────────────────────────────────────────────────
+function finish(t0,p){
+  scanRunning=false;
+  $('scan-btn').style.display='block';
+  $('stop-btn').style.display='none';
+  if(t0&&p){
+    allResults.sort((a,b)=>b.score-a.score);
+    render(allResults.slice(0,p.show),p);
+    const elapsed=((Date.now()-t0)/1000).toFixed(1);
+    if(aborted) setStatus('STOPPED — '+allResults.length+' contracts found in '+elapsed+'s','err');
+    else setStatus('DONE — '+allResults.length+' contracts · '+elapsed+'s','done');
+  } else {
+    setStatus('Stopped.','err');
+  }
+  setTimeout(hideProgress,1500);
+}
+
+function stopScan(){
+  aborted=true;
+  setStatus('Stopping...','err');
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────
 function resort(col){
   if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=-1;}
   allResults.sort((a,b)=>{let av=a[col],bv=b[col];if(typeof av==='string')av=av.toLowerCase(),bv=bv.toLowerCase();return sortDir*(av<bv?-1:av>bv?1:0);});
-  const p={show:+document.getElementById('f-show').value,iv:+document.getElementById('f-iv').value,extr:+document.getElementById('f-extr').value,oi:+document.getElementById('f-oi').value};
-  render(allResults.slice(0,p.show),p);
+  render(allResults.slice(0,+$('f-show').value),{iv:+$('f-iv').value,extr:+$('f-extr').value,oi:+$('f-oi').value});
 }
 
 function render(rows,p){
-  if(!rows.length){document.getElementById('results').innerHTML=`<div class="empty"><div class="big">◇</div><div>No contracts passed filters.</div><p>Try raising Max IV (${p.iv}), Max Extrinsic (${p.extr}%), or loosening the Pass 1 off-high threshold.</p></div>`;return;}
+  if(!rows.length){$('results').innerHTML='<div class="empty"><div class="big">&#9670;</div><div>No contracts passed filters.</div></div>';return;}
   const avgScore=(rows.reduce((a,r)=>a+r.score,0)/rows.length).toFixed(1);
   const avgIV=(rows.reduce((a,r)=>a+r.iv,0)/rows.length*100).toFixed(0);
   const avgDTE=Math.round(rows.reduce((a,r)=>a+r.dte,0)/rows.length);
   const syms=new Set(rows.map(r=>r.sym)).size;
 
   const cols=[
-    {k:'score',l:'Score',h:'/ 100'},
-    {k:'sym',l:'Ticker',h:''},
-    {k:'strike',l:'Strike',h:'$'},
-    {k:'exp',l:'Expiry',h:'date'},
-    {k:'dte',l:'DTE',h:'days'},
-    {k:'premium',l:'Premium',h:'mid $'},
-    {k:'delta',l:'Delta',h:''},
-    {k:'iv',l:'IV',h:'impl vol'},
-    {k:'extr',l:'Extr%',h:'extrinsic'},
-    {k:'spread',l:'Sprd%',h:'bid/ask'},
-    {k:'oi',l:'OI',h:'open int'},
-    {k:'fromHigh',l:'Off High',h:'52w%'},
-    {k:'putWall',l:'Put Wall',h:'GEX $'},
+    {k:'score',l:'Score'},{k:'sym',l:'Ticker'},{k:'strike',l:'Strike'},
+    {k:'exp',l:'Expiry'},{k:'dte',l:'DTE'},{k:'premium',l:'Premium'},
+    {k:'delta',l:'Delta'},{k:'iv',l:'IV'},{k:'extr',l:'Extr%'},
+    {k:'spread',l:'Sprd%'},{k:'oi',l:'OI'},{k:'fromHigh',l:'Off Hi'},
+    {k:'putWall',l:'Put Wall'}
   ];
 
   const thead=cols.map(c=>{
     const on=sortCol===c.k?'sorted':'';
     const arr=sortCol===c.k?(sortDir===-1?'↓':'↑'):'↕';
-    return`<th class="${on}" onclick="resort('${c.k}')">${c.l}<br><span style="font-size:8px;color:var(--t3);text-transform:none;letter-spacing:0;font-weight:400">${c.h}</span><span class="sa">${arr}</span></th>`;
-  }).join('');
+    return'<th class="'+on+'" onclick="resort(\''+c.k+'\')">'+c.l+'<span class="sa">'+arr+'</span></th>';
+  }).join('')+'<th>'+( IS_LOCAL?'ORDER':'')+'</th>';
 
   const tbody=rows.map((r,i)=>{
-    const gold=i<3?'gold':'';
+    const gold=i<3?'top3':'';
     const sc=r.score;
     const sfill=sc>=70?'var(--gr)':sc>=50?'var(--am)':'var(--re)';
     const scolor=sc>=70?'ok':sc>=50?'warn':'bad';
-    const tagHtml=r.tags.map(t=>`<span class="tag tag-${t==='GEX'?'gex':t==='UOA'?'uoa':t==='VOL'?'vol':'iv'}">${t}</span>`).join('');
-    return`<tr class="${gold}">
-      <td><div class="score-wrap"><span class="score-n ${scolor}">${r.score}</span><div class="score-track"><div class="score-bar" style="width:${sc}%;background:${sfill}"></div></div></div></td>
-      <td><span class="rank">#${i+1}</span> <span class="sym">${r.sym}</span>${tagHtml}<span class="desc">${r.desc}</span></td>
-      <td class="strike">$${r.strike}</td>
-      <td class="exp-d">${r.exp}</td>
-      <td class="${r.dte>=450?'ok':r.dte>=365?'warn':'bad'}">${r.dte}</td>
-      <td class="prem">$${r.premium.toFixed(2)}</td>
-      <td class="${r.delta>=.75&&r.delta<=.85?'ok':'warn'}">${r.delta.toFixed(3)}</td>
-      <td class="${r.iv<=.40?'ok':r.iv<=.60?'warn':'bad'}">${(r.iv*100).toFixed(0)}%</td>
-      <td class="${r.extr<=12?'ok':r.extr<=18?'warn':'bad'}">${r.extr.toFixed(1)}%</td>
-      <td class="${r.spread<=1.5?'ok':r.spread<=2.5?'warn':'bad'}">${r.spread.toFixed(1)}%</td>
-      <td class="${r.oi>=2000?'ok':r.oi>=500?'warn':'mu'}">${r.oi.toLocaleString()}</td>
-      <td class="${r.fromHigh<=-30?'ok':r.fromHigh<=-15?'warn':'bad'}">${r.fromHigh.toFixed(1)}%</td>
-      <td class="${r.putWall?'ok':'mu'}">${r.putWall?'$'+r.putWall:'—'}</td>
-    </tr>`;
+    const tagH=r.tags.map(t=>'<span class="tag tag-'+(t==='GEX'?'gex':t==='UOA'?'uoa':t==='VOL'?'vol':'iv')+'">'+t+'</span>').join('');
+    const buyBtn=IS_LOCAL?'<button class="buy-btn" onclick="openOrderModal('+i+')">BUY</button>':'';
+    return'<tr class="'+gold+'">'+
+      '<td><div class="score-w"><span class="score-n '+scolor+'">'+r.score+'</span><div class="score-bg"><div class="score-fl" style="width:'+sc+'%;background:'+sfill+'"></div></div></div></td>'+
+      '<td><span class="rk">#'+(i+1)+'</span> <span class="sym">'+r.sym+'</span>'+tagH+'<span class="desc">'+r.desc+'</span></td>'+
+      '<td class="wht">$'+r.strike+'</td>'+
+      '<td class="dim">'+r.exp+'</td>'+
+      '<td class="'+(r.dte>=450?'ok':r.dte>=365?'warn':'bad')+'">'+r.dte+'</td>'+
+      '<td class="wht">$'+r.premium.toFixed(2)+'</td>'+
+      '<td class="'+(r.delta>=.75&&r.delta<=.85?'ok':'warn')+'">'+r.delta.toFixed(3)+'</td>'+
+      '<td class="'+(r.iv<=.40?'ok':r.iv<=.60?'warn':'bad')+'">'+(r.iv*100).toFixed(0)+'%</td>'+
+      '<td class="'+(r.extr<=12?'ok':r.extr<=18?'warn':'bad')+'">'+r.extr.toFixed(1)+'%</td>'+
+      '<td class="'+(r.spread<=1.5?'ok':r.spread<=2.5?'warn':'bad')+'">'+r.spread.toFixed(1)+'%</td>'+
+      '<td class="'+(r.oi>=2000?'ok':r.oi>=500?'warn':'dim')+'">'+r.oi.toLocaleString()+'</td>'+
+      '<td class="'+(r.fromHigh<=-30?'ok':r.fromHigh<=-15?'warn':'bad')+'">'+r.fromHigh.toFixed(1)+'%</td>'+
+      '<td class="'+(r.putWall?'ok':'dim')+'">'+(r.putWall?'$'+r.putWall:'—')+'</td>'+
+      '<td>'+buyBtn+'</td>'+
+    '</tr>';
   }).join('');
 
-  document.getElementById('results').innerHTML=`
-    <div class="results-header">
-      <div class="stats-row">
-        <div class="stat"><div class="stat-label">contracts</div><div class="stat-value sv-ac">${rows.length}</div></div>
-        <div class="stat"><div class="stat-label">tickers</div><div class="stat-value sv-t">${syms}</div></div>
-        <div class="stat"><div class="stat-label">avg score</div><div class="stat-value sv-gr">${avgScore}</div></div>
-        <div class="stat"><div class="stat-label">avg IV</div><div class="stat-value sv-t">${avgIV}%</div></div>
-        <div class="stat"><div class="stat-label">avg DTE</div><div class="stat-value sv-t">${avgDTE}d</div></div>
-      </div>
-    </div>
-    <div class="legend">
-      <span style="color:var(--t3)">TAGS:</span>
-      <span class="le"><span class="led" style="background:var(--gr)"></span>GEX — within $10 of put wall</span>
-      <span class="le"><span class="led" style="background:var(--pu)"></span>UOA — unusual OI ratio</span>
-      <span class="le"><span class="led" style="background:var(--am)"></span>VOL — stock volume 2x+ avg</span>
-      <span class="le"><span class="led" style="background:var(--re)"></span>IV↑ — above 80% IV gate</span>
-      <span style="margin-left:auto;color:var(--t3);font-family:var(--mono);font-size:10px">click column headers to sort ↕</span>
-    </div>
-    <div class="tbl-wrap"><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>`;
+  $('results').innerHTML=
+    '<div class="results-hdr">'+
+      '<div class="stat"><div class="stat-l">CONTRACTS</div><div class="stat-v sv-g">'+rows.length+'</div></div>'+
+      '<div class="stat"><div class="stat-l">TICKERS</div><div class="stat-v sv-w">'+syms+'</div></div>'+
+      '<div class="stat"><div class="stat-l">AVG SCORE</div><div class="stat-v sv-gr">'+avgScore+'</div></div>'+
+      '<div class="stat"><div class="stat-l">AVG IV</div><div class="stat-v sv-w">'+avgIV+'%</div></div>'+
+      '<div class="stat"><div class="stat-l">AVG DTE</div><div class="stat-v sv-w">'+avgDTE+'d</div></div>'+
+    '</div>'+
+    '<div class="legend">'+
+      '<span style="color:var(--t3)">TAGS:</span>'+
+      '<span class="le"><span class="led" style="background:var(--gr)"></span>GEX put wall</span>'+
+      '<span class="le"><span class="led" style="background:#bb86fc"></span>UOA unusual OI</span>'+
+      '<span class="le"><span class="led" style="background:var(--am)"></span>VOL 2x+ avg</span>'+
+      '<span class="le"><span class="led" style="background:var(--re)"></span>IV↑ high IV</span>'+
+      '<span style="margin-left:auto;color:var(--t3)">click headers to sort</span>'+
+    '</div>'+
+    '<div class="tbl-wrap"><table><thead><tr>'+thead+'</tr></thead><tbody>'+tbody+'</tbody></table></div>';
+}
+
+// ── ORDER MODAL ──────────────────────────────────────────────────────────
+function openOrderModal(idx){
+  if(!IS_LOCAL){alert('Trading requires localhost server.');return;}
+  const r=allResults[idx];
+  currentOrder=r;orderAborted=false;
+  $('ord-contract').textContent=r.sym+' $'+r.strike+'C '+r.exp;
+  $('ord-mid').textContent='bid $'+r.bid.toFixed(2)+' / mid $'+r.premium.toFixed(2);
+  $('ord-price').value=r.bid.toFixed(2);
+  $('ord-status').textContent='';$('ord-status').className='ord-status';
+  $('btn-exec').disabled=false;
+  updateMaxPrice();
+  $('order-modal').style.display='flex';
+}
+function closeOrderModal(){orderAborted=true;$('order-modal').style.display='none';currentOrder=null;}
+function updateMaxPrice(){
+  const start=+$('ord-price').value||0;
+  const att=+$('ord-attempts').value||50;
+  $('ord-max').textContent='$'+(start+att*0.05).toFixed(2);
+}
+
+async function executeOrder(){
+  if(!currentOrder||!serverCfg?.account_id)return;
+  const r=currentOrder;
+  const qty=+$('ord-qty').value;
+  let price=+$('ord-price').value;
+  const maxAttempts=+$('ord-attempts').value;
+  orderAborted=false;
+  $('btn-exec').disabled=true;
+  const statusEl=$('ord-status');
+
+  for(let i=1;i<=maxAttempts&&!orderAborted;i++){
+    statusEl.textContent='['+i+'/'+maxAttempts+'] limit $'+price.toFixed(2)+' ...';
+    statusEl.className='ord-status running';
+
+    try{
+      const resp=await tradPost('accounts/'+serverCfg.account_id+'/orders',{
+        'class':'option',symbol:r.sym,option_symbol:r.optSym,
+        side:'buy_to_open',quantity:qty,type:'limit',
+        price:price.toFixed(2),duration:'day'
+      });
+      const oid=resp?.order?.id;
+      if(!oid){statusEl.textContent='ERROR: '+(resp?.errors?.error||JSON.stringify(resp)).slice(0,200);statusEl.className='ord-status error';$('btn-exec').disabled=false;return;}
+
+      await new Promise(r=>setTimeout(r,3000));
+      if(orderAborted)break;
+
+      const check=await trad('accounts/'+serverCfg.account_id+'/orders/'+oid);
+      const st=check?.order?.status;
+      if(st==='filled'){statusEl.textContent='FILLED $'+price.toFixed(2)+' | #'+oid;statusEl.className='ord-status filled';$('btn-exec').disabled=false;return;}
+      if(st==='partially_filled'){statusEl.textContent='PARTIAL $'+price.toFixed(2)+' | continuing...';}
+
+      await tradDelete('accounts/'+serverCfg.account_id+'/orders/'+oid);
+      price=Math.round((price+0.05)*100)/100;
+    }catch(e){
+      statusEl.textContent='ERROR: '+e.message;statusEl.className='ord-status error';
+      $('btn-exec').disabled=false;return;
+    }
+  }
+
+  if(orderAborted){statusEl.textContent='CANCELLED';statusEl.className='ord-status';}
+  else{statusEl.textContent='NOT FILLED after '+maxAttempts+' attempts (final $'+price.toFixed(2)+')';statusEl.className='ord-status error';}
+  $('btn-exec').disabled=false;
 }
 </script>
 </body>
